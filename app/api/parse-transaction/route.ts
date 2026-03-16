@@ -1,4 +1,5 @@
 import { generateText, Output } from 'ai'
+import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 
 const transactionSchema = z.object({
@@ -46,7 +47,7 @@ Set confidence based on how clear the transaction description is:
 - Below 0.5: Very unclear, mostly guessing`
 
   const { output } = await generateText({
-    model: 'anthropic/claude-sonnet-4-20250514',
+    model: anthropic('claude-sonnet-4-20250514'),
     output: Output.object({
       schema: transactionSchema,
     }),
