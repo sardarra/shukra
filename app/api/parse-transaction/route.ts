@@ -2,6 +2,18 @@ import { generateText, Output } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 
+// todo later: add accounts manually/ over time as needed
+var allAccounts: string[] = ["Cash", "Accounts Receivable", "Office Supplies", "Equipment", "Accounts Payable", "Notes Payable", "Bank Loan", "Owner\'s Capital", "Service Revenue", "Sales Revenue", "Rent Expense", "Utilities Expense", "Salaries Expense", "Office Supplies Expense"]
+
+function allAccountsToString(): string {
+  var toRet: string = "";
+  for (let account in allAccounts) {
+    toRet += account;
+
+  }
+  return toRet;
+}
+
 const transactionSchema = z.object({
   date: z.string().describe('The date of the transaction in YYYY-MM-DD format, use today if not specified'),
   description: z.string().describe('A clear, professional description of the transaction'),
