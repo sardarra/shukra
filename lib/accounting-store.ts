@@ -23,56 +23,7 @@ export function getTodayDate(): string {
 export function getStarterTransactions(): JournalEntry[] {
   const today = getTodayDate()
   return [
-    {
-      id: generateId(),
-      date: today,
-      description: 'Owner invested cash into the business',
-      debitAccount: 'Cash',
-      debitAmount: 10000,
-      creditAccount: "Owner's Capital",
-      creditAmount: 10000,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: generateId(),
-      date: today,
-      description: 'Paid monthly office rent',
-      debitAccount: 'Rent Expense',
-      debitAmount: 1200,
-      creditAccount: 'Cash',
-      creditAmount: 1200,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: generateId(),
-      date: today,
-      description: 'Received payment from client for services',
-      debitAccount: 'Cash',
-      debitAmount: 3500,
-      creditAccount: 'Service Revenue',
-      creditAmount: 3500,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: generateId(),
-      date: today,
-      description: 'Purchased office supplies with cash',
-      debitAccount: 'Office Supplies Expense',
-      debitAmount: 400,
-      creditAccount: 'Cash',
-      creditAmount: 400,
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: generateId(),
-      date: today,
-      description: 'Received a loan from the bank',
-      debitAccount: 'Cash',
-      debitAmount: 2000,
-      creditAccount: 'Bank Loan',
-      creditAmount: 2000,
-      createdAt: new Date().toISOString(),
-    },
+    
   ]
 }
 
