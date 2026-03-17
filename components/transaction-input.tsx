@@ -8,17 +8,28 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { formatCurrency } from '@/lib/accounting-store'
-import { Check, X, AlertTriangle, Sparkles } from 'lucide-react'
+import { Check, X, AlertTriangle, Sparkles, PenLine } from 'lucide-react'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { ACCOUNT_NAMES, type AccountName } from '@/lib/accounting-types'
 
 export function TransactionInput() {
   const [input, setInput] = useState('')
   const [clarificationAnswer, setClarificationAnswer] = useState('')
+  const [showManualEntry, setShowManualEntry] = useState(false)
+  const [manualEntry, setManualEntry] = useState({
+    debitAccount: '' as AccountName | '',
+    creditAccount: '' as AccountName | '',
+    amount: '',
+    description: '',
+  })
   const {
     parseTransaction,
     confirmEntry,
     cancelEntry,
     answerClarification,
+    addManualEntry,
     pendingEntry,
     isLoading,
     error,
@@ -47,6 +58,24 @@ export function TransactionInput() {
     if (!clarificationAnswer.trim()) return
     await answerClarification(clarificationAnswer.trim())
     setClarificationAnswer('')
+  }
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const amount = parseFloat(manualEntry.amount)
+    if (!manualEntry.debitAccount || !manualEntry.creditAccount || isNaN(amount) || amount <= 0) return
+    
+    addManualEntry({
+      debitAccount: manualEntry.debitAccount as AccountName,
+      creditAccount: manualEntry.creditAccount as AccountName,
+      debitAmount: amount,
+      creditAmount: amount,
+      description: manualEntry.description || `Manual entry: ${manualEntry.debitAccount} / ${manualEntry.creditAccount}`,
+      confidence: 1.0,
+    })
+    
+    setManualEntry({ debitAccount: '', creditAccount: '', amount: '', description: '' })
+    setShowManualEntry(false)
   }
 
   const isLowConfidence = pendingEntry && pendingEntry.parsed.confidence < 0.8
@@ -81,6 +110,95 @@ export function TransactionInput() {
           </Button>
         </div>
       </form>
+
+      {!pendingEntry && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setShowManualEntry(!showManualEntry)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+          >
+            <PenLine className="h-3 w-3" />
+            Optional: Manually add journal entries
+          </button>
+
+          {showManualEntry && (
+            <form onSubmit={handleManualSubmit} className="mt-3 p-4 border border-border rounded-lg bg-muted/30 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="debit-account" className="text-xs">Debit Account</Label>
+                  <Select
+                    value={manualEntry.debitAccount}
+                    onValueChange={(value) => setManualEntry(prev => ({ ...prev, debitAccount: value as AccountName }))}
+                  >
+                    <SelectTrigger id="debit-account" className="h-9">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCOUNT_NAMES.map((account) => (
+                        <SelectItem key={account} value={account}>{account}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="credit-account" className="text-xs">Credit Account</Label>
+                  <Select
+                    value={manualEntry.creditAccount}
+                    onValueChange={(value) => setManualEntry(prev => ({ ...prev, creditAccount: value as AccountName }))}
+                  >
+                    <SelectTrigger id="credit-account" className="h-9">
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCOUNT_NAMES.map((account) => (
+                        <SelectItem key={account} value={account}>{account}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="amount" className="text-xs">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={manualEntry.amount}
+                    onChange={(e) => setManualEntry(prev => ({ ...prev, amount: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-xs">Description (optional)</Label>
+                  <Input
+                    id="description"
+                    placeholder="Transaction description"
+                    value={manualEntry.description}
+                    onChange={(e) => setManualEntry(prev => ({ ...prev, description: e.target.value }))}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowManualEntry(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  disabled={!manualEntry.debitAccount || !manualEntry.creditAccount || !manualEntry.amount}
+                >
+                  Add Entry
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {error && (
         <Card className="border-destructive bg-destructive/5">
