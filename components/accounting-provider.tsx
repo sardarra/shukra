@@ -42,6 +42,7 @@ interface AccountingContextType extends AccountingState {
   cancelEntry: () => void
   deleteEntry: (id: string) => void
   answerClarification: (answer: string) => Promise<void>
+  addManualEntry: (entry: ParsedTransaction) => void
 }
 
 const AccountingContext = createContext<AccountingContextType | null>(null)
@@ -137,6 +138,15 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     await parseTransaction(clarifiedInput)
   }, [pendingEntry, parseTransaction])
 
+  const addManualEntry = useCallback((entry: ParsedTransaction) => {
+    const newEntry: JournalEntry = {
+      id: generateId(),
+      ...entry,
+      createdAt: new Date().toISOString(),
+    }
+    setJournalEntries((prev) => [...prev, newEntry])
+  }, [])
+
   const value: AccountingContextType = {
     journalEntries,
     ...derivedState,
@@ -149,6 +159,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     cancelEntry,
     deleteEntry,
     answerClarification,
+    addManualEntry,
   }
 
   return (

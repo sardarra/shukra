@@ -67,6 +67,25 @@ export interface BalanceSheetData {
   netIncome: number
 }
 
+export const ACCOUNT_NAMES = [
+  'Cash',
+  'Accounts Receivable',
+  'Office Supplies',
+  'Equipment',
+  'Accounts Payable',
+  'Notes Payable',
+  'Bank Loan',
+  "Owner's Capital",
+  'Service Revenue',
+  'Sales Revenue',
+  'Rent Expense',
+  'Utilities Expense',
+  'Salaries Expense',
+  'Office Supplies Expense',
+] as const
+
+export type AccountName = typeof ACCOUNT_NAMES[number]
+
 export const ACCOUNTS: Account[] = [
   { name: 'Cash', type: 'asset', normalBalance: 'debit' },
   { name: 'Accounts Receivable', type: 'asset', normalBalance: 'debit' },
