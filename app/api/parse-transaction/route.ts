@@ -59,7 +59,8 @@ Set confidence based on how clear the transaction description is:
 - Below 0.5: Very unclear, mostly guessing`
 
   const { output } = await generateText({
-    model: anthropic('claude-sonnet-4-20250514'),
+    // use claude haiku 4.5
+    model: anthropic('claude-haiku-4-5'),
     output: Output.object({
       schema: transactionSchema,
     }),
