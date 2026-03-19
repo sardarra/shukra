@@ -1,12 +1,16 @@
 'use client'
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { Session, User } from '@supabase/supabase-js'
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
 type AuthContextValue = {
+  isAuthReady: boolean
+  session: Session | null
+  user: User | null
   loggedIn: boolean
-  setLoggedIn: (value: boolean) => void
-  signIn: () => void
-  signOut: () => void
+  signInWithPassword: (args: { email: string; password: string }) => Promise<{ error: string | null }>
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -17,36 +21,46 @@ export function useAuth() {
   return ctx
 }
 
-const STORAGE_KEY = 'shukra.loggedIn'
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [isAuthReady, setIsAuthReady] = useState(false)
+  const [session, setSession] = useState<Session | null>(null)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw === 'true') setLoggedIn(true)
-    } catch {
-      // ignore storage errors (private mode, etc.)
-    }
+    const supabase = createSupabaseBrowserClient()
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null)
+      setIsAuthReady(true)
+    })
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      setIsAuthReady(true)
+    })
+
+    return () => sub.subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, String(loggedIn))
-    } catch {
-      // ignore
-    }
-  }, [loggedIn])
-
   const value = useMemo<AuthContextValue>(() => {
+    const user = session?.user ?? null
+    const loggedIn = Boolean(user)
+
     return {
+      isAuthReady,
+      session,
+      user,
       loggedIn,
-      setLoggedIn,
-      signIn: () => setLoggedIn(true),
-      signOut: () => setLoggedIn(false),
+      signInWithPassword: async ({ email, password }) => {
+        const supabase = createSupabaseBrowserClient()
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        return { error: error?.message ?? null }
+      },
+      signOut: async () => {
+        const supabase = createSupabaseBrowserClient()
+        await supabase.auth.signOut()
+      },
     }
-  }, [loggedIn])
+  }, [isAuthReady, session])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

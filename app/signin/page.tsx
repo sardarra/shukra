@@ -9,21 +9,31 @@ import { useAuth } from '@/components/auth-provider'
 
 export default function SignInPage() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const { signInWithPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password])
+  const missingEnv = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canSubmit) return
     setIsSubmitting(true)
+    setError(null)
 
     try {
-      // TODO: replace with Supabase sign-in.
-      signIn()
+      if (missingEnv) {
+        setError('Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env and restart the dev server.')
+        return
+      }
+      const result = await signInWithPassword({ email, password })
+      if (result.error) {
+        setError(result.error)
+        return
+      }
       router.replace('/')
     } finally {
       setIsSubmitting(false)
@@ -66,6 +76,8 @@ export default function SignInPage() {
                 placeholder="••••••••"
               />
             </div>
+
+            {error ? <div className="text-sm text-destructive">{error}</div> : null}
 
             <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
               {isSubmitting ? 'Signing in…' : 'Sign in'}
