@@ -9,8 +9,9 @@ type AuthContextValue = {
   session: Session | null
   user: User | null
   loggedIn: boolean
-  signInWithPassword: (args: { email: string; password: string }) => Promise<{ error: string | null }>
+  signInWithPassword: ({ email, password }: { email: string; password: string }) => Promise<{ error: string | null }> 
   signOut: () => Promise<void>
+  signUp: ({ email, password }: { email: string; password: string }) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       user,
       loggedIn,
-      signInWithPassword: async ({ email, password }) => {
+      signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
         const supabase = createSupabaseBrowserClient()
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         return { error: error?.message ?? null }
@@ -58,6 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut: async () => {
         const supabase = createSupabaseBrowserClient()
         await supabase.auth.signOut()
+      },
+      signUp: async ({ email, password }: { email: string; password: string }) => { 
+        const supabase = createSupabaseBrowserClient()
+        const { error } = await supabase.auth.signUp({ email, password })
+        return { error: error?.message ?? null }
       },
     }
   }, [isAuthReady, session])

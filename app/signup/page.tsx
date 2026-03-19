@@ -6,17 +6,17 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/components/auth-provider'
+import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const router = useRouter()
-  const { signInWithPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-  const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password])
+  const canSubmit = useMemo(() => email.trim().length > 0 && password.length >= 6, [email, password])
   const missingEnv = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   async function onSubmit(e: React.FormEvent) {
@@ -24,17 +24,31 @@ export default function SignInPage() {
     if (!canSubmit) return
     setIsSubmitting(true)
     setError(null)
+    setSuccess(null)
 
     try {
       if (missingEnv) {
         setError('Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env and restart the dev server.')
         return
       }
-      const result = await signInWithPassword({ email, password })
-      if (result.error) {
-        setError(result.error)
+
+      const supabase = createSupabaseBrowserClient()
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+
+      if (signUpError) {
+        setError(signUpError.message)
         return
       }
+
+      // If email confirmations are enabled, session will be null until verified.
+      if (!data.session) {
+        setSuccess('Check your email to confirm your account, then come back and sign in.')
+        return
+      }
+
       router.replace('/')
     } finally {
       setIsSubmitting(false)
@@ -45,8 +59,8 @@ export default function SignInPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Use your account to access your books.</CardDescription>
+          <CardTitle>Create account</CardTitle>
+          <CardDescription>Start tracking your books in minutes.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -71,23 +85,25 @@ export default function SignInPage() {
               <Input
                 id="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="At least 6 characters"
               />
+              <div className="text-xs text-muted-foreground">Minimum 6 characters.</div>
             </div>
 
             {error ? <div className="text-sm text-destructive">{error}</div> : null}
+            {success ? <div className="text-sm text-emerald-600">{success}</div> : null}
 
             <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
+              {isSubmitting ? 'Creating…' : 'Create account'}
             </Button>
 
             <div className="text-sm text-muted-foreground text-center">
-              New here?{' '}
-              <Link href="/signup" className="text-primary hover:underline">
-                Create an account
+              Already have an account?{' '}
+              <Link href="/signin" className="text-primary hover:underline">
+                Sign in
               </Link>
             </div>
           </form>
