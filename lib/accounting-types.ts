@@ -91,6 +91,14 @@ export const ACCOUNTS: Account[] = [
   { name: 'Accounts Receivable', type: 'asset', normalBalance: 'debit' },
   { name: 'Office Supplies', type: 'asset', normalBalance: 'debit' },
   { name: 'Equipment', type: 'asset', normalBalance: 'debit' },
+  { name: 'Inventory', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Rent', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Insurance', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Utilities', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Salaries', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Office Supplies', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Equipment', type: 'asset', normalBalance: 'debit' },
+  { name: 'Prepaid Inventory', type: 'asset', normalBalance: 'debit' },
   { name: 'Accounts Payable', type: 'liability', normalBalance: 'credit' },
   { name: 'Notes Payable', type: 'liability', normalBalance: 'credit' },
   { name: 'Bank Loan', type: 'liability', normalBalance: 'credit' },
@@ -101,6 +109,8 @@ export const ACCOUNTS: Account[] = [
   { name: 'Utilities Expense', type: 'expense', normalBalance: 'debit' },
   { name: 'Salaries Expense', type: 'expense', normalBalance: 'debit' },
   { name: 'Office Supplies Expense', type: 'expense', normalBalance: 'debit' },
+  { name: 'Inventory Expense', type: 'expense', normalBalance: 'debit' },
+  
 ]
 
 export function getAccountType(accountName: string): AccountType {
