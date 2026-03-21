@@ -86,7 +86,7 @@ export const ACCOUNT_NAMES = [
 
 export type AccountName = typeof ACCOUNT_NAMES[number]
 
-export const ACCOUNTS: Account[] = [
+export let ACCOUNTS: Account[] = [
   { name: 'Cash', type: 'asset', normalBalance: 'debit' },
   { name: 'Accounts Receivable', type: 'asset', normalBalance: 'debit' },
   { name: 'Office Supplies', type: 'asset', normalBalance: 'debit' },
@@ -121,4 +121,10 @@ export function getAccountType(accountName: string): AccountType {
 export function getAccountNormalBalance(accountName: string): 'debit' | 'credit' {
   const account = ACCOUNTS.find(a => a.name === accountName)
   return account?.normalBalance || 'debit'
+}
+
+export function addAccount(account: Account) {
+  if (!ACCOUNTS.some(a => a.name === account.name)) {
+    ACCOUNTS.push(account)
+  }
 }

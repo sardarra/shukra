@@ -18,6 +18,7 @@ import {
   generateId,
   getTodayDate,
 } from '@/lib/accounting-store'
+import { useAuth } from './auth-provider'
 
 interface AccountingState {
   journalEntries: JournalEntry[]
@@ -64,6 +65,7 @@ function computeDerivedState(entries: JournalEntry[]): Omit<AccountingState, 'jo
 }
 
 export function AccountingProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => getStarterTransactions())
   const [pendingEntry, setPendingEntry] = useState<PendingEntry | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -71,6 +73,49 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
   const [clarificationQuestion, setClarificationQuestion] = useState<string | null>(null)
 
   const derivedState = useMemo(() => computeDerivedState(journalEntries), [journalEntries])
+
+  const getInternalUserId = useCallback((): number | null => {
+    const userMetadata = user?.user_metadata as Record<string, unknown> | undefined
+    const appMetadata = user?.app_metadata as Record<string, unknown> | undefined
+    const candidate =
+      userMetadata?.internal_user_id ??
+      userMetadata?.user_id ??
+      userMetadata?.app_user_id ??
+      appMetadata?.internal_user_id ??
+      appMetadata?.user_id ??
+      appMetadata?.app_user_id
+
+    if (typeof candidate === 'number' && Number.isInteger(candidate)) return candidate
+    if (typeof candidate === 'string') {
+      const parsed = Number.parseInt(candidate, 10)
+      if (Number.isInteger(parsed) && parsed >= 0) return parsed
+    }
+    return null
+  }, [user])
+
+  const persistEntry = useCallback(async (entry: JournalEntry) => {
+    const userId = getInternalUserId()
+
+    try {
+      const response = await fetch('/api/journal-entries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          debitAccount: entry.debitAccount,
+          debitAmount: entry.debitAmount,
+          creditAccount: entry.creditAccount,
+          creditAmount: entry.creditAmount,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Persistence request failed')
+      }
+    } catch {
+      setError('Saved locally, but failed to sync to Supabase.')
+    }
+  }, [getInternalUserId])
 
   const parseTransaction = useCallback(async (input: string) => {
     setIsLoading(true)
@@ -116,9 +161,10 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     }
 
     setJournalEntries((prev) => [...prev, newEntry])
+    void persistEntry(newEntry)
     setPendingEntry(null)
     setClarificationQuestion(null)
-  }, [pendingEntry])
+  }, [pendingEntry, persistEntry])
 
   const cancelEntry = useCallback(() => {
     setPendingEntry(null)
@@ -145,7 +191,8 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     }
     setJournalEntries((prev) => [...prev, newEntry])
-  }, [])
+    void persistEntry(newEntry)
+  }, [persistEntry])
 
   const value: AccountingContextType = {
     journalEntries,
