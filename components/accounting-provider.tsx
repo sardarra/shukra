@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  type ReactNode,
+} from 'react'
 import type {
   JournalEntry,
   Ledger,
@@ -65,8 +73,8 @@ function computeDerivedState(entries: JournalEntry[]): Omit<AccountingState, 'jo
 }
 
 export function AccountingProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() => getStarterTransactions())
+  const { user, isAuthReady } = useAuth()
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
   const [pendingEntry, setPendingEntry] = useState<PendingEntry | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,34 +82,54 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
   const derivedState = useMemo(() => computeDerivedState(journalEntries), [journalEntries])
 
-  const getInternalUserId = useCallback((): number | null => {
-    const userMetadata = user?.user_metadata as Record<string, unknown> | undefined
-    const appMetadata = user?.app_metadata as Record<string, unknown> | undefined
-    const candidate =
-      userMetadata?.internal_user_id ??
-      userMetadata?.user_id ??
-      userMetadata?.app_user_id ??
-      appMetadata?.internal_user_id ??
-      appMetadata?.user_id ??
-      appMetadata?.app_user_id
+  // Load journal entries for the signed-in user (server uses Supabase session cookie).
+  useEffect(() => {
+    if (!isAuthReady) return
 
-    if (typeof candidate === 'number' && Number.isInteger(candidate)) return candidate
-    if (typeof candidate === 'string') {
-      const parsed = Number.parseInt(candidate, 10)
-      if (Number.isInteger(parsed) && parsed >= 0) return parsed
+    if (!user) {
+      setJournalEntries([])
+      return
     }
-    return null
-  }, [user])
+
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const response = await fetch('/api/journal-entries', { method: 'GET' })
+        const data = (await response.json().catch(() => ({}))) as {
+          entries?: JournalEntry[]
+          error?: string
+        }
+
+        if (cancelled) return
+
+        if (!response.ok) {
+          if (response.status !== 401) {
+            setError(data.error ?? 'Could not load journal entries from the server.')
+          }
+          return
+        }
+
+        setError(null)
+        setJournalEntries(Array.isArray(data.entries) ? data.entries : [])
+      } catch {
+        if (!cancelled) {
+          setError('Could not load journal entries from the server.')
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthReady, user?.id])
 
   const persistEntry = useCallback(async (entry: JournalEntry) => {
-    const userId = getInternalUserId()
-
     try {
       const response = await fetch('/api/journal-entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           debitAccount: entry.debitAccount,
           debitAmount: entry.debitAmount,
           creditAccount: entry.creditAccount,
@@ -115,7 +143,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     } catch {
       setError('Saved locally, but failed to sync to Supabase.')
     }
-  }, [getInternalUserId])
+  }, [])
 
   const parseTransaction = useCallback(async (input: string) => {
     setIsLoading(true)

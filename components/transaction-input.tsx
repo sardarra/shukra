@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
-import { formatCurrency } from '@/lib/accounting-store'
+import { formatCurrency, getTodayDate } from '@/lib/accounting-store'
 import { Check, X, AlertTriangle, Sparkles, PenLine } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -66,6 +66,7 @@ export function TransactionInput() {
     if (!manualEntry.debitAccount || !manualEntry.creditAccount || isNaN(amount) || amount <= 0) return
     
     addManualEntry({
+      date: getTodayDate(),
       debitAccount: manualEntry.debitAccount as AccountName,
       creditAccount: manualEntry.creditAccount as AccountName,
       debitAmount: amount,

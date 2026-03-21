@@ -1,18 +1,8 @@
 import { generateText, Output } from 'ai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-import { addAccount, ACCOUNTS } from '@/lib/accounting-types' 
-
-// get userid from auth context and pass to addAccount when creating new accounts
-const userId = getUserIdFromAuthContext();
-
-function getUserIdFromAuthContext() {
-  // Implement your logic to get the user ID from the auth context
-  
-  return 1; // Placeholder
-}
+import { ACCOUNTS } from '@/lib/accounting-types'
 
 // todo later: add accounts manually/ over time as needed
 //var allAccounts: string[] = ["Cash", "Accounts Receivable", "Office Supplies", "Equipment", "Accounts Payable", "Notes Payable", "Bank Loan", "Owner\'s Capital", "Service Revenue", "Sales Revenue", "Rent Expense", "Utilities Expense", "Salaries Expense", "Office Supplies Expense"]
@@ -78,51 +68,4 @@ If the transaction involves an account not in the list, create a new account wit
   })
 
   return Response.json(output)
-}
-
-
-
-const journalEntryInsertSchema = z.object({
-  userId: z.number().int().nonnegative().nullable().optional(),
-  debitAccount: z.string().min(1),
-  debitAmount: z.number().positive(),
-  creditAccount: z.string().min(1),
-  creditAmount: z.number().positive(),
-})
-
-export type JournalEntryInsertInput = z.infer<typeof journalEntryInsertSchema>
-
-// Inserts one journal entry row into Supabase with server auth context.
-// also include user_id in parameters
-
-export async function addJournalEntryToSupabase(input: JournalEntryInsertInput): Promise<{
-  ok: boolean
-  error: string | null
-}> {
-  const parsed = journalEntryInsertSchema.safeParse(input)
-  if (!parsed.success) {
-    return { ok: false, error: 'Invalid journal entry payload' }
-  }
-
-  try {
-    const supabase = await createSupabaseServerClient()
-    const { error } = await supabase.from('journalEntries').insert({
-      created_at: new Date().toISOString(),
-      debit_account: parsed.data.debitAccount,
-      debit_amount: parsed.data.debitAmount,
-      credit_account: parsed.data.creditAccount,
-      credit_amount: parsed.data.creditAmount,
-      user_id: parsed.data.userId ?? null,
-    })
-
-    if (error) {
-      console.error('Failed inserting journalEntries row:', error)
-      return { ok: false, error: 'Failed to persist journal entry' }
-    }
-
-    return { ok: true, error: null }
-  } catch (error) {
-    console.error('Unexpected insert failure in addJournalEntryToSupabase:', error)
-    return { ok: false, error: 'Unexpected error while persisting journal entry' }
-  }
 }

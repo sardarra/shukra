@@ -22,6 +22,10 @@ export function useAuth() {
   return ctx
 }
 
+export function getUserFromSession(session: Session | null): User | null {
+  return session?.user ?? null
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthReady, setIsAuthReady] = useState(false)
   const [session, setSession] = useState<Session | null>(null)

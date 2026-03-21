@@ -1,8 +1,10 @@
 import { z } from 'zod'
-import { addJournalEntryToSupabase } from '@/app/api/parse-transaction/route'
+import {
+  addJournalEntryToSupabase,
+  getJournalEntriesByUserId,
+} from '@/lib/supabase/journal-entries'
 
 const persistJournalEntrySchema = z.object({
-  userId: z.number().int().nonnegative().nullable().optional(),
   debitAccount: z.string().min(1),
   debitAmount: z.number().positive(),
   creditAccount: z.string().min(1),
@@ -22,8 +24,22 @@ export async function POST(request: Request) {
 
   const result = await addJournalEntryToSupabase(parsed.data)
   if (!result.ok) {
-    return Response.json(result, { status: 500 })
+    const status = result.error === 'Unauthorized' ? 401 : 500
+    return Response.json(result, { status })
   }
 
   return Response.json(result)
+}
+
+export async function GET() {
+  const result = await getJournalEntriesByUserId()
+  if (!result.ok) {
+    const status = result.error === 'Unauthorized' ? 401 : 500
+    return Response.json(
+      { ok: false, error: result.error, entries: [] },
+      { status }
+    )
+  }
+
+  return Response.json({ ok: true, error: null, entries: result.entries })
 }
