@@ -16,7 +16,9 @@ import type {
   IncomeStatementData,
   BalanceSheetData,
   ParsedTransaction,
+  PlantAsset,
 } from '@/lib/accounting-types'
+import { isDepreciablePlantPurchase } from '@/lib/depreciation'
 import {
   getStarterTransactions,
   calculateLedgers,
@@ -27,9 +29,11 @@ import {
   getTodayDate,
 } from '@/lib/accounting-store'
 import { useAuth } from './auth-provider'
+import { LoadingScreen } from './loading-screen'
 
 interface AccountingState {
   journalEntries: JournalEntry[]
+  plantAssets: PlantAsset[]
   ledgers: Ledger[]
   trialBalance: TrialBalanceRow[]
   incomeStatement: IncomeStatementData
@@ -43,6 +47,8 @@ interface PendingEntry {
 
 interface AccountingContextType extends AccountingState {
   pendingEntry: PendingEntry | null
+  /** True while auth or initial journal entries are still loading. */
+  isInitialLoad: boolean
   isLoading: boolean
   error: string | null
   clarificationQuestion: string | null
@@ -64,23 +70,33 @@ export function useAccounting() {
   return context
 }
 
-function computeDerivedState(entries: JournalEntry[]): Omit<AccountingState, 'journalEntries'> {
+function computeDerivedState(
+  entries: JournalEntry[],
+  plantAssets: PlantAsset[]
+): Omit<AccountingState, 'journalEntries'> {
   const ledgers = calculateLedgers(entries)
   const trialBalance = calculateTrialBalance(ledgers)
   const incomeStatement = calculateIncomeStatement(ledgers)
-  const balanceSheet = calculateBalanceSheet(ledgers, incomeStatement.netIncome)
-  return { ledgers, trialBalance, incomeStatement, balanceSheet }
+  const balanceSheet = calculateBalanceSheet(ledgers, incomeStatement.netIncome, plantAssets)
+  return { ledgers, plantAssets, trialBalance, incomeStatement, balanceSheet }
 }
 
 export function AccountingProvider({ children }: { children: ReactNode }) {
   const { user, isAuthReady } = useAuth()
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([])
+  const [plantAssets, setPlantAssets] = useState<PlantAsset[]>([])
   const [pendingEntry, setPendingEntry] = useState<PendingEntry | null>(null)
+  const [isEntriesLoading, setIsEntriesLoading] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [clarificationQuestion, setClarificationQuestion] = useState<string | null>(null)
 
-  const derivedState = useMemo(() => computeDerivedState(journalEntries), [journalEntries])
+  const isInitialLoad = !isAuthReady || (!!user && isEntriesLoading)
+
+  const derivedState = useMemo(
+    () => computeDerivedState(journalEntries, plantAssets),
+    [journalEntries, plantAssets]
+  )
 
   // Load journal entries for the signed-in user (server uses Supabase session cookie).
   useEffect(() => {
@@ -88,16 +104,20 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       setJournalEntries([])
+      setPlantAssets([])
+      setIsEntriesLoading(false)
       return
     }
 
     let cancelled = false
+    setIsEntriesLoading(true)
 
     ;(async () => {
       try {
         const response = await fetch('/api/journal-entries', { method: 'GET' })
         const data = (await response.json().catch(() => ({}))) as {
           entries?: JournalEntry[]
+          plantAssets?: PlantAsset[]
           error?: string
         }
 
@@ -112,9 +132,14 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
         setError(null)
         setJournalEntries(Array.isArray(data.entries) ? data.entries : [])
+        setPlantAssets(Array.isArray(data.plantAssets) ? data.plantAssets : [])
       } catch {
         if (!cancelled) {
           setError('Could not load journal entries from the server.')
+        }
+      } finally {
+        if (!cancelled) {
+          setIsEntriesLoading(false)
         }
       }
     })()
@@ -124,27 +149,42 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthReady, user?.id])
 
-  const persistEntry = useCallback(async (entry: JournalEntry) => {
-    try {
-      const response = await fetch('/api/journal-entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: entry.description,
-          debitAccount: entry.debitAccount,
-          debitAmount: entry.debitAmount,
-          creditAccount: entry.creditAccount,
-          creditAmount: entry.creditAmount,
-        }),
-      })
+  const persistEntry = useCallback(
+    async (entry: JournalEntry, options?: { plantAssetSpecificName?: string | null }) => {
+      try {
+        const response = await fetch('/api/journal-entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            description: entry.description,
+            debitAccount: entry.debitAccount,
+            debitAmount: entry.debitAmount,
+            creditAccount: entry.creditAccount,
+            creditAmount: entry.creditAmount,
+            date: entry.date,
+            plantAssetSpecificName: options?.plantAssetSpecificName ?? undefined,
+          }),
+        })
 
-      if (!response.ok) {
-        throw new Error('Persistence request failed')
+        if (!response.ok) {
+          throw new Error('Persistence request failed')
+        }
+
+        const reload = await fetch('/api/journal-entries', { method: 'GET' })
+        const data = (await reload.json().catch(() => ({}))) as {
+          entries?: JournalEntry[]
+          plantAssets?: PlantAsset[]
+        }
+        if (reload.ok) {
+          setJournalEntries(Array.isArray(data.entries) ? data.entries : [])
+          setPlantAssets(Array.isArray(data.plantAssets) ? data.plantAssets : [])
+        }
+      } catch {
+        setError('Saved locally, but failed to sync to Supabase.')
       }
-    } catch {
-      setError('Saved locally, but failed to sync to Supabase.')
-    }
-  }, [])
+    },
+    []
+  )
 
   const parseTransaction = useCallback(async (input: string) => {
     setIsLoading(true)
@@ -190,7 +230,9 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     }
 
     setJournalEntries((prev) => [...prev, newEntry])
-    void persistEntry(newEntry)
+    void persistEntry(newEntry, {
+      plantAssetSpecificName: pendingEntry.parsed.plantAssetSpecificName,
+    })
     setPendingEntry(null)
     setClarificationQuestion(null)
   }, [pendingEntry, persistEntry])
@@ -220,13 +262,16 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     }
     setJournalEntries((prev) => [...prev, newEntry])
-    void persistEntry(newEntry)
+    void persistEntry(newEntry, {
+      plantAssetSpecificName: entry.plantAssetSpecificName,
+    })
   }, [persistEntry])
 
   const value: AccountingContextType = {
     journalEntries,
     ...derivedState,
     pendingEntry,
+    isInitialLoad,
     isLoading,
     error,
     clarificationQuestion,
@@ -240,7 +285,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
   return (
     <AccountingContext.Provider value={value}>
-      {children}
+      {isInitialLoad ? <LoadingScreen /> : children}
     </AccountingContext.Provider>
   )
 }

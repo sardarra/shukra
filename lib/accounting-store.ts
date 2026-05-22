@@ -5,9 +5,12 @@ import type {
   TrialBalanceRow,
   IncomeStatementData,
   BalanceSheetData,
+  BalanceSheetPlantAsset,
   AccountType,
+  PlantAsset,
 } from './accounting-types'
 import { ACCOUNTS, getAccountType, getAccountNormalBalance } from './accounting-types'
+import { accumulatedDepreciationAccount, plantAssetLabel } from './depreciation'
 
 // Generate unique IDs
 export function generateId(): string {
@@ -196,14 +199,46 @@ export function calculateIncomeStatement(ledgers: Ledger[]): IncomeStatementData
   }
 }
 
+function buildPlantAssetBalanceSheetLines(
+  plantAssets: PlantAsset[],
+  ledgers: Ledger[]
+): BalanceSheetPlantAsset[] {
+  return plantAssets.map((asset) => {
+    const label = plantAssetLabel(asset)
+    const accDepLedger = ledgers.find((l) => l.account === accumulatedDepreciationAccount(label))
+    const accumulatedDepreciation = accDepLedger?.balance ?? 0
+    const netBookValue = Math.max(0, asset.cost - accumulatedDepreciation)
+    return {
+      specificName: label,
+      account: asset.account,
+      cost: asset.cost,
+      accumulatedDepreciation,
+      netBookValue,
+    }
+  })
+}
+
+function isPlantRelatedLedgerAccount(account: string, hasPlantAssets: boolean): boolean {
+  if (!hasPlantAssets) return false
+  if (account === 'Equipment' || account === 'Prepaid Equipment') return true
+  return account.startsWith('Accumulated Depreciation -')
+}
+
 // Calculate balance sheet from ledgers
-export function calculateBalanceSheet(ledgers: Ledger[], netIncome: number): BalanceSheetData {
+export function calculateBalanceSheet(
+  ledgers: Ledger[],
+  netIncome: number,
+  plantAssets: PlantAsset[] = []
+): BalanceSheetData {
   const assets: { account: string; amount: number }[] = []
   const liabilities: { account: string; amount: number }[] = []
   const equity: { account: string; amount: number }[] = []
+  const hasPlantAssets = plantAssets.length > 0
+  const plantAssetLines = buildPlantAssetBalanceSheetLines(plantAssets, ledgers)
 
   ledgers.forEach(ledger => {
     if (ledger.balance === 0) return
+    if (isPlantRelatedLedgerAccount(ledger.account, hasPlantAssets)) return
 
     if (ledger.accountType === 'asset') {
       assets.push({ account: ledger.account, amount: ledger.balance })
@@ -220,6 +255,7 @@ export function calculateBalanceSheet(ledgers: Ledger[], netIncome: number): Bal
 
   return {
     assets,
+    plantAssets: plantAssetLines,
     liabilities,
     equity,
     totalAssets,

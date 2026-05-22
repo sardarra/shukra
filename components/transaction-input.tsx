@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { ACCOUNT_NAMES, type AccountName } from '@/lib/accounting-types'
+import { isDepreciablePlantPurchase } from '@/lib/depreciation'
 
 export function TransactionInput() {
   const [input, setInput] = useState('')
@@ -23,7 +24,10 @@ export function TransactionInput() {
     creditAccount: '' as AccountName | '',
     amount: '',
     description: '',
+    plantAssetName: '',
   })
+  const isPlantPurchase =
+    !!manualEntry.debitAccount && isDepreciablePlantPurchase(manualEntry.debitAccount)
   const {
     parseTransaction,
     confirmEntry,
@@ -73,9 +77,18 @@ export function TransactionInput() {
       creditAmount: amount,
       description: manualEntry.description || `Manual entry: ${manualEntry.debitAccount} / ${manualEntry.creditAccount}`,
       confidence: 1.0,
+      plantAssetSpecificName: isPlantPurchase
+        ? manualEntry.plantAssetName.trim() || manualEntry.description.trim() || null
+        : null,
     })
     
-    setManualEntry({ debitAccount: '', creditAccount: '', amount: '', description: '' })
+    setManualEntry({
+      debitAccount: '',
+      creditAccount: '',
+      amount: '',
+      description: '',
+      plantAssetName: '',
+    })
     setShowManualEntry(false)
   }
 
@@ -184,6 +197,22 @@ export function TransactionInput() {
                   />
                 </div>
               </div>
+              {isPlantPurchase && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="plant-asset-name" className="text-xs">
+                    Plant asset name
+                  </Label>
+                  <Input
+                    id="plant-asset-name"
+                    placeholder='e.g. "Delivery Truck"'
+                    value={manualEntry.plantAssetName}
+                    onChange={(e) =>
+                      setManualEntry((prev) => ({ ...prev, plantAssetName: e.target.value }))
+                    }
+                    className="h-9"
+                  />
+                </div>
+              )}
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowManualEntry(false)}>
                   Cancel
@@ -238,6 +267,14 @@ export function TransactionInput() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {pendingEntry.parsed.description}
                   </p>
+                  {pendingEntry.parsed.plantAssetSpecificName && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Plant asset:{' '}
+                      <span className="font-medium text-foreground">
+                        {pendingEntry.parsed.plantAssetSpecificName}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 {clarificationQuestion && (

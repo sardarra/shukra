@@ -4,6 +4,8 @@ import {
   addJournalEntryToSupabase,
   getJournalEntriesByUserId,
 } from '@/lib/supabase/journal-entries'
+import { getPlantAssetsForUser } from '@/lib/supabase/plant-assets'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const persistJournalEntrySchema = z.object({
   description: z.string(),
@@ -11,6 +13,8 @@ const persistJournalEntrySchema = z.object({
   debitAmount: z.number().positive(),
   creditAccount: z.string().min(1),
   creditAmount: z.number().positive(),
+  date: z.string().optional(),
+  plantAssetSpecificName: z.string().optional(),
 })
 
 export async function POST(request: Request) {
@@ -39,10 +43,21 @@ export async function GET() {
   if (!result.ok) {
     const status = result.error === 'Unauthorized' ? 401 : 500
     return Response.json(
-      { ok: false, error: result.error, entries: [] },
+      { ok: false, error: result.error, entries: [], plantAssets: [] },
       { status }
     )
   }
 
-  return Response.json({ ok: true, error: null, entries: result.entries })
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const plantAssets = user ? await getPlantAssetsForUser(user.id) : []
+
+  return Response.json({
+    ok: true,
+    error: null,
+    entries: result.entries,
+    plantAssets,
+  })
 }

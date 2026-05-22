@@ -29,6 +29,8 @@ export interface ParsedTransaction {
   creditAccount: string
   creditAmount: number
   confidence: number
+  /** Short label for the asset, e.g. "Delivery Truck", when buying plant property. */
+  plantAssetSpecificName?: string | null
 }
 
 export interface LedgerEntry {
@@ -61,8 +63,17 @@ export interface IncomeStatementData {
   netIncome: number
 }
 
+export interface BalanceSheetPlantAsset {
+  specificName: string
+  account: string
+  cost: number
+  accumulatedDepreciation: number
+  netBookValue: number
+}
+
 export interface BalanceSheetData {
   assets: { account: string; amount: number }[]
+  plantAssets: BalanceSheetPlantAsset[]
   liabilities: { account: string; amount: number }[]
   equity: { account: string; amount: number }[]
   totalAssets: number
@@ -73,8 +84,9 @@ export interface BalanceSheetData {
 
 export interface PlantAsset {
   id: string
-  name: string           // e.g. "Delivery Truck"
-  account: string        // e.g. "Vehicles" (the debit account it was recorded under)
+  name: string
+  specificName: string
+  account: string        // e.g. "Equipment" (the debit account it was recorded under)
   cost: number           // original purchase cost
   salvageValue: number   // estimated residual value
   usefulLifeYears: number

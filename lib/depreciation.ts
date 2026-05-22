@@ -7,6 +7,16 @@ export const DEPRECIABLE_ASSET_ACCOUNTS = ['Equipment', 'Prepaid Equipment'] as 
 
 const DEFAULT_USEFUL_LIFE_YEARS = 5
 
+export function plantAssetLabel(asset: Pick<PlantAsset, 'specificName' | 'name'>): string {
+  return asset.specificName?.trim() || asset.name
+}
+
+export function isDepreciablePlantPurchase(debitAccount: string): boolean {
+  return DEPRECIABLE_ASSET_ACCOUNTS.includes(
+    debitAccount as (typeof DEPRECIABLE_ASSET_ACCOUNTS)[number]
+  )
+}
+
 export function depreciationExpenseAccount(assetName: string): string {
   return `Depreciation Expense - ${assetName}`
 }
@@ -25,6 +35,11 @@ export function getAnnualDepreciation(plantAsset: PlantAsset): number {
   const depreciableBase = plantAsset.cost - plantAsset.salvageValue
   if (depreciableBase <= 0) return 0
   return depreciableBase / plantAsset.usefulLifeYears
+}
+
+// monthly depreciation
+export function getMonthlyDepreciation(plantAsset: PlantAsset): number {
+  return getAnnualDepreciation(plantAsset) / 12
 }
 
 export function registerDepreciationAccounts(assetName: string): void {
@@ -48,8 +63,9 @@ export function shouldRecordDepreciationForYear(
 ): boolean {
   const year = asOf.getFullYear()
   const purchase = new Date(plantAsset.purchaseDate)
+  if (year == purchase.getFullYear()) return false
   if (Number.isNaN(purchase.getTime()) || asOf < purchase) return false
-  if (hasDepreciationEntryForYear(entries, plantAsset.name, year)) return false
+  if (hasDepreciationEntryForYear(entries, plantAssetLabel(plantAsset), year)) return false
 
   const amount = getAnnualDepreciation(plantAsset)
   if (amount <= 0) return false
@@ -65,13 +81,14 @@ export function buildDepreciationJournalPayload(
   const amount = Math.round(getAnnualDepreciation(plantAsset) * 100) / 100
   if (amount <= 0) return null
 
-  registerDepreciationAccounts(plantAsset.name)
+  const label = plantAssetLabel(plantAsset)
+  registerDepreciationAccounts(label)
 
   return {
-    description: depreciationEntryDescription(plantAsset.name, year),
-    debitAccount: depreciationExpenseAccount(plantAsset.name),
+    description: depreciationEntryDescription(label, year),
+    debitAccount: depreciationExpenseAccount(label),
     debitAmount: amount,
-    creditAccount: accumulatedDepreciationAccount(plantAsset.name),
+    creditAccount: accumulatedDepreciationAccount(label),
     creditAmount: amount,
   }
 }
@@ -79,6 +96,7 @@ export function buildDepreciationJournalPayload(
 export type InferredPlantAsset = {
   journalEntryId: string
   name: string
+  specificName: string
   account: string
   cost: number
   salvageValue: number
@@ -103,14 +121,15 @@ export function inferPlantAssetsFromJournalEntries(
       if (seen.has(sourceId)) return []
       seen.add(sourceId)
 
-      const name =
+      const description =
         entry.description.trim() ||
         `${entry.debitAccount} (${entry.date})`
 
       return [
         {
           journalEntryId: sourceId,
-          name,
+          name: description,
+          specificName: description,
           account: entry.debitAccount,
           cost: entry.debitAmount,
           salvageValue: 0,

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { JournalEntry } from '@/lib/accounting-types'
+import { isDepreciablePlantPurchase } from '@/lib/depreciation'
+import { createPlantAssetFromPurchase } from '@/lib/supabase/plant-assets'
 
 const journalEntryInsertSchema = z.object({
   description: z.string(),
@@ -8,6 +10,8 @@ const journalEntryInsertSchema = z.object({
   debitAmount: z.number().positive(),
   creditAccount: z.string().min(1),
   creditAmount: z.number().positive(),
+  date: z.string().optional(),
+  plantAssetSpecificName: z.string().optional(),
 })
 
 export type JournalEntryInsertPayload = z.infer<typeof journalEntryInsertSchema>
@@ -58,19 +62,45 @@ export async function addJournalEntryToSupabase(
       return { ok: false, error: 'Unauthorized' }
     }
 
-    const { error } = await supabase.from('journalEntries').insert({
-      created_at: new Date().toISOString(),
-      description: parsed.data.description,
-      debit_account: parsed.data.debitAccount,
-      debit_amount: parsed.data.debitAmount,
-      credit_account: parsed.data.creditAccount,
-      credit_amount: parsed.data.creditAmount,
-      user_id: user.id,
-    })
+    const createdAt = parsed.data.date
+      ? new Date(`${parsed.data.date}T12:00:00.000Z`).toISOString()
+      : new Date().toISOString()
+
+    const { data: inserted, error } = await supabase
+      .from('journalEntries')
+      .insert({
+        created_at: createdAt,
+        description: parsed.data.description,
+        debit_account: parsed.data.debitAccount,
+        debit_amount: parsed.data.debitAmount,
+        credit_account: parsed.data.creditAccount,
+        credit_amount: parsed.data.creditAmount,
+        user_id: user.id,
+      })
+      .select('id')
+      .single()
 
     if (error) {
       console.error('Failed inserting journalEntries row:', error)
       return { ok: false, error: 'Failed to persist journal entry' }
+    }
+
+    const specificName = parsed.data.plantAssetSpecificName?.trim()
+    if (
+      specificName &&
+      isDepreciablePlantPurchase(parsed.data.debitAccount) &&
+      inserted?.id != null
+    ) {
+      const purchaseDate = parsed.data.date ?? createdAt.split('T')[0]!
+      await createPlantAssetFromPurchase({
+        userId: user.id,
+        journalEntryId: String(inserted.id),
+        specificName,
+        account: parsed.data.debitAccount,
+        cost: parsed.data.debitAmount,
+        purchaseDate,
+        description: parsed.data.description,
+      })
     }
 
     return { ok: true, error: null }

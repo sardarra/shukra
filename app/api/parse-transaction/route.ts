@@ -23,6 +23,13 @@ const transactionSchema = z.object({
   creditAccount: z.string().describe('The account to credit. Must be one of: ' + accountsToString()),
   creditAmount: z.number().describe('The amount to credit (should equal debit amount for double-entry)'),
   confidence: z.number().describe('Your confidence in the interpretation from 0 to 1'),
+  plantAssetSpecificName: z
+    .string()
+    .nullable()
+    .describe(
+      'When purchasing plant property or equipment (debit Equipment or Prepaid Equipment), the short specific name of that asset only, e.g. "Delivery Truck" or "Office Copier". Otherwise the user must be asked for clarification.'
+    ),
+    
 })
 
 export async function POST(request: Request) {
@@ -46,8 +53,12 @@ Common patterns:
 - "Received loan" = Debit Cash, Credit Bank Loan
 - "Bought supplies" = Debit Office Supplies Expense, Credit Cash
 - "Paid utilities" = Debit Utilities Expense, Credit Cash
+- "Bought a delivery truck for $25,000" = Debit Equipment, Credit Cash; set plantAssetSpecificName to "Delivery Truck"
+- "Bought equipment (vaguely)" = Debit Equipment, Credit Cash; set plantAssetSpecificName to null and ask the user for clarification.
 
 Today's date is ${todayDate}. Use this date if no specific date is mentioned.
+
+For equipment or other depreciable plant asset purchases, always set plantAssetSpecificName to a concise asset label (not the full sentence description). If one is not provided (e.g., the user says "bought equipment") then follow up with a question to get the specific name.
 
 Set confidence based on how clear the transaction description is:
 - 0.9-1.0: Very clear, unambiguous transaction
@@ -56,10 +67,12 @@ Set confidence based on how clear the transaction description is:
 - Below 0.5: Very unclear, mostly guessing
 
 If the transaction involves an account not in the list, create a new account with a descriptive name and add it to the list of accounts.
-`
 
+For further clarification, ask the user for the specific name and purchase date of the plant asset, with something like "What is the specific name of the equipment you bought?" and "What is the purchase date of the equipment you bought?"
+`
+//use claude haiku 4.5
   const { output } = await generateText({
-    model: anthropic('claude-sonnet-4-20250514'),
+    model: anthropic('claude-haiku-4-5'),
     output: Output.object({
       schema: transactionSchema,
     }),
