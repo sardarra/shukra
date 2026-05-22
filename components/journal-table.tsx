@@ -41,9 +41,9 @@ export function JournalTable() {
             <TableHead className="font-semibold">Date</TableHead>
             <TableHead className="font-semibold">Description</TableHead>
             <TableHead className="font-semibold">Debit Account</TableHead>
-            <TableHead className="font-semibold text-right">Debit</TableHead>
+            <TableHead className="font-semibold text-right">Debit Amount</TableHead>
             <TableHead className="font-semibold">Credit Account</TableHead>
-            <TableHead className="font-semibold text-right">Credit</TableHead>
+            <TableHead className="font-semibold text-right">Credit Amount</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>

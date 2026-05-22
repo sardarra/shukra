@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { JournalEntry } from '@/lib/accounting-types'
 
 const journalEntryInsertSchema = z.object({
+  description: z.string(),
   debitAccount: z.string().min(1),
   debitAmount: z.number().positive(),
   creditAccount: z.string().min(1),
@@ -14,6 +15,7 @@ export type JournalEntryInsertPayload = z.infer<typeof journalEntryInsertSchema>
 type JournalRow = {
   id: number | string
   created_at: string
+  description: string | null
   debit_account: string | null
   debit_amount: number | null
   credit_account: string | null
@@ -27,7 +29,7 @@ function rowToJournalEntry(row: JournalRow): JournalEntry {
   return {
     id: `db:${String(row.id)}`,
     date,
-    description: '',
+    description: row.description ?? '',
     debitAccount: row.debit_account ?? '',
     debitAmount: row.debit_amount ?? 0,
     creditAccount: row.credit_account ?? '',
@@ -58,6 +60,7 @@ export async function addJournalEntryToSupabase(
 
     const { error } = await supabase.from('journalEntries').insert({
       created_at: new Date().toISOString(),
+      description: parsed.data.description,
       debit_account: parsed.data.debitAccount,
       debit_amount: parsed.data.debitAmount,
       credit_account: parsed.data.creditAccount,
@@ -96,7 +99,7 @@ export async function getJournalEntriesByUserId(): Promise<{
 
     const { data, error } = await supabase
       .from('journalEntries')
-      .select('id, created_at, debit_account, debit_amount, credit_account, credit_amount, user_id')
+      .select('id, created_at, description, debit_account, debit_amount, credit_account, credit_amount, user_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 

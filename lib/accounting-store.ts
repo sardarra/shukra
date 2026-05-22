@@ -237,3 +237,5 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 2,
   }).format(amount)
 }
+
+export { getAnnualDepreciation as calculateDepreciation } from '@/lib/depreciation'

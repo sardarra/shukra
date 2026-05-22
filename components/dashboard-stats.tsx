@@ -12,6 +12,8 @@ export function DashboardStats() {
   const totalCredits = trialBalance.reduce((sum, row) => sum + row.credit, 0)
   const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01
 
+  const cash = balanceSheet.assets.find(asset => asset.account === 'Cash')
+  const cashBalance = cash ? cash.amount : 0;
   const stats = [
     {
       title: 'Net Income',
@@ -20,11 +22,12 @@ export function DashboardStats() {
       description: incomeStatement.netIncome >= 0 ? 'Profit' : 'Loss',
       trend: incomeStatement.netIncome >= 0 ? 'positive' : 'negative',
     },
+
     {
-      title: 'Total Assets',
-      value: formatCurrency(balanceSheet.totalAssets),
+      title: 'Cash',
+      value: formatCurrency(cashBalance),
       icon: DollarSign,
-      description: `${balanceSheet.assets.length} account${balanceSheet.assets.length !== 1 ? 's' : ''}`,
+      description: 'Cash on hand',
       trend: 'neutral',
     },
     {

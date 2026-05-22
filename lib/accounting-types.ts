@@ -1,10 +1,14 @@
-export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
+import { string } from "zod/v4"
+
+export type AccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense' | "plant"
 
 export interface Account {
   name: string
   type: AccountType
   normalBalance: 'debit' | 'credit'
 }
+
+
 
 export interface JournalEntry {
   id: string
@@ -67,6 +71,18 @@ export interface BalanceSheetData {
   netIncome: number
 }
 
+export interface PlantAsset {
+  id: string
+  name: string           // e.g. "Delivery Truck"
+  account: string        // e.g. "Vehicles" (the debit account it was recorded under)
+  cost: number           // original purchase cost
+  salvageValue: number   // estimated residual value
+  usefulLifeYears: number
+  purchaseDate: string   // ISO date string
+  lastDepreciatedDate: string | null  // track when we last ran depreciation
+  createdAt: string
+}
+
 export const ACCOUNT_NAMES = [
   'Cash',
   'Accounts Receivable',
@@ -126,5 +142,11 @@ export function getAccountNormalBalance(accountName: string): 'debit' | 'credit'
 export function addAccount(account: Account) {
   if (!ACCOUNTS.some(a => a.name === account.name)) {
     ACCOUNTS.push(account)
+  }
+}
+
+export function addAccountManual(accountName: string, accountType: AccountType, normalBalance: 'debit' | 'credit') {
+  if (!ACCOUNTS.some(a => a.name === accountName)) {
+    ACCOUNTS.push({ name: accountName, type: accountType, normalBalance: normalBalance })
   }
 }

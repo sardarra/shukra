@@ -130,6 +130,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          description: entry.description,
           debitAccount: entry.debitAccount,
           debitAmount: entry.debitAmount,
           creditAccount: entry.creditAccount,

@@ -1,10 +1,12 @@
 import { z } from 'zod'
+import { syncDepreciationForCurrentUser } from '@/lib/supabase/depreciation'
 import {
   addJournalEntryToSupabase,
   getJournalEntriesByUserId,
 } from '@/lib/supabase/journal-entries'
 
 const persistJournalEntrySchema = z.object({
+  description: z.string(),
   debitAccount: z.string().min(1),
   debitAmount: z.number().positive(),
   creditAccount: z.string().min(1),
@@ -32,6 +34,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  await syncDepreciationForCurrentUser()
   const result = await getJournalEntriesByUserId()
   if (!result.ok) {
     const status = result.error === 'Unauthorized' ? 401 : 500

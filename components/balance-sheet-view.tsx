@@ -36,25 +36,17 @@ export function BalanceSheetView() {
 
   return (
     <div className="space-y-6">
-      <Card className={isBalanced ? 'border-success bg-success/5' : 'border-warning bg-warning/5'}>
-        <CardContent className="flex items-center gap-3 py-3">
-          {isBalanced ? (
-            <>
-              <Check className="h-5 w-5 text-success flex-shrink-0" />
-              <p className="text-sm font-medium text-success">
-                Balance sheet is in balance. Assets = Liabilities + Equity
-              </p>
-            </>
-          ) : (
-            <>
-              <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
-              <p className="text-sm font-medium text-warning-foreground">
-                Balance sheet is out of balance by {formatCurrency(Math.abs(balanceSheet.totalAssets - totalLiabilitiesAndEquity))}.
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      {/* if the balance sheet is not balanced, show an alert */}
+      {!isBalanced && (
+        <Card className="border-warning bg-warning/5">
+          <CardContent className="flex items-center gap-3 py-3">
+            <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
+            <p className="text-sm font-medium text-warning-foreground">
+              Balance sheet is out of balance by {formatCurrency(Math.abs(balanceSheet.totalAssets - totalLiabilitiesAndEquity))}.
+            </p>
+          </CardContent>
+          </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Assets */}
