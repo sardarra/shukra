@@ -3,7 +3,8 @@
 import { useAccounting } from './accounting-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/accounting-store'
-import { TrendingUp, TrendingDown, DollarSign, Scale } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Scale, PieChart } from 'lucide-react'
+import { PieChartAssets } from './ui/piechart'
 
 export function DashboardStats() {
   const { incomeStatement, balanceSheet, journalEntries, trialBalance } = useAccounting()
@@ -70,6 +71,17 @@ export function DashboardStats() {
           </CardContent>
         </Card>
       ))}
+      <Card className="col-span-full md:col-span-2 lg:col-span-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Asset Composition
+          </CardTitle>
+          <PieChart className="h-4 w-4 text-muted-foreground" aria-hidden />
+        </CardHeader>
+        <CardContent className="pt-0">
+          <PieChartAssets />
+        </CardContent>
+      </Card>
     </div>
   )
 }

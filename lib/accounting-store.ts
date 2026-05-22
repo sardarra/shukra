@@ -9,8 +9,19 @@ import type {
   AccountType,
   PlantAsset,
 } from './accounting-types'
-import { ACCOUNTS, getAccountType, getAccountNormalBalance } from './accounting-types'
-import { accumulatedDepreciationAccount, plantAssetLabel } from './depreciation'
+import {
+  ACCOUNTS,
+  getAccountType,
+  getAccountNormalBalance,
+} from './accounting-types'
+import {
+  accumulatedDepreciationAccount,
+  plantAssetLabel,
+} from './depreciation'
+import {
+  isAccumulatedDepreciationAccount,
+  isDepreciationExpenseAccount,
+} from './accounting-types'
 
 // Generate unique IDs
 export function generateId(): string {
@@ -218,10 +229,23 @@ function buildPlantAssetBalanceSheetLines(
   })
 }
 
-function isPlantRelatedLedgerAccount(account: string, hasPlantAssets: boolean): boolean {
-  if (!hasPlantAssets) return false
-  if (account === 'Equipment' || account === 'Prepaid Equipment') return true
-  return account.startsWith('Accumulated Depreciation -')
+function isExcludedFromBalanceSheetAssets(account: string, hasPlantAssets: boolean): boolean {
+  if (isDepreciationExpenseAccount(account)) return true
+  if (hasPlantAssets) {
+    if (account === 'Equipment' || account === 'Prepaid Equipment') return true
+    if (isAccumulatedDepreciationAccount(account)) return true
+  }
+  return false
+}
+
+/** Amount contributed to total assets (contra-assets subtract). */
+function balanceSheetAssetContribution(ledger: Ledger): number {
+  if (ledger.accountType !== 'asset') return 0
+  const normalBalance = getAccountNormalBalance(ledger.account)
+  if (normalBalance === 'credit') {
+    return -ledger.balance
+  }
+  return ledger.balance
 }
 
 // Calculate balance sheet from ledgers
@@ -238,10 +262,12 @@ export function calculateBalanceSheet(
 
   ledgers.forEach(ledger => {
     if (ledger.balance === 0) return
-    if (isPlantRelatedLedgerAccount(ledger.account, hasPlantAssets)) return
+    if (isExcludedFromBalanceSheetAssets(ledger.account, hasPlantAssets)) return
 
     if (ledger.accountType === 'asset') {
-      assets.push({ account: ledger.account, amount: ledger.balance })
+      const amount = balanceSheetAssetContribution(ledger)
+      if (amount === 0) return
+      assets.push({ account: ledger.account, amount })
     } else if (ledger.accountType === 'liability') {
       liabilities.push({ account: ledger.account, amount: ledger.balance })
     } else if (ledger.accountType === 'equity') {
@@ -249,7 +275,9 @@ export function calculateBalanceSheet(
     }
   })
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.amount, 0)
+  const regularAssetTotal = assets.reduce((sum, a) => sum + a.amount, 0)
+  const plantAssetTotal = plantAssetLines.reduce((sum, p) => sum + p.netBookValue, 0)
+  const totalAssets = regularAssetTotal + plantAssetTotal
   const totalLiabilities = liabilities.reduce((sum, l) => sum + l.amount, 0)
   const totalEquity = equity.reduce((sum, e) => sum + e.amount, 0) + netIncome
 

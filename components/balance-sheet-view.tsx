@@ -87,10 +87,18 @@ export function BalanceSheetView() {
                   {balanceSheet.plantAssets.map((item) => (
                     <TableRow key={item.specificName}>
                       <TableCell className="pl-10">
-                        <span>{item.specificName}</span>
-                        <span className="text-muted-foreground text-xs ml-2">
-                          ({item.account})
-                        </span>
+                        <div>
+                          <span>{item.specificName}</span>
+                          <span className="text-muted-foreground text-xs ml-2">
+                            ({item.account})
+                          </span>
+                        </div>
+                        {item.accumulatedDepreciation > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {formatCurrency(item.cost)} cost −{' '}
+                            {formatCurrency(item.accumulatedDepreciation)} depreciation
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatCurrency(item.netBookValue)}

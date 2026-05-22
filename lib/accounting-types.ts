@@ -31,6 +31,10 @@ export interface ParsedTransaction {
   confidence: number
   /** Short label for the asset, e.g. "Delivery Truck", when buying plant property. */
   plantAssetSpecificName?: string | null
+  /** False when a plant purchase is missing a specific name or purchase date from the user. */
+  plantAssetDetailsComplete?: boolean
+  /** Claude's follow-up question(s) for the user; used for plant asset name/date. */
+  messageToUser?: string | null
 }
 
 export interface LedgerEntry {
@@ -141,12 +145,24 @@ export let ACCOUNTS: Account[] = [
   
 ]
 
+export function isDepreciationExpenseAccount(accountName: string): boolean {
+  return accountName.startsWith('Depreciation Expense -')
+}
+
+export function isAccumulatedDepreciationAccount(accountName: string): boolean {
+  return accountName.startsWith('Accumulated Depreciation -')
+}
+
 export function getAccountType(accountName: string): AccountType {
+  if (isDepreciationExpenseAccount(accountName)) return 'expense'
+  if (isAccumulatedDepreciationAccount(accountName)) return 'asset'
   const account = ACCOUNTS.find(a => a.name === accountName)
   return account?.type || 'asset'
 }
 
 export function getAccountNormalBalance(accountName: string): 'debit' | 'credit' {
+  if (isDepreciationExpenseAccount(accountName)) return 'debit'
+  if (isAccumulatedDepreciationAccount(accountName)) return 'credit'
   const account = ACCOUNTS.find(a => a.name === accountName)
   return account?.normalBalance || 'debit'
 }

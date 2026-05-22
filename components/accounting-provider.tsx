@@ -18,7 +18,7 @@ import type {
   ParsedTransaction,
   PlantAsset,
 } from '@/lib/accounting-types'
-import { isDepreciablePlantPurchase } from '@/lib/depreciation'
+import { resolveClarificationQuestion } from '@/lib/depreciation'
 import {
   getStarterTransactions,
   calculateLedgers,
@@ -204,12 +204,9 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
       const parsed: ParsedTransaction = await response.json()
 
-      // Check confidence level
-      if (parsed.confidence < 0.8) {
-        setClarificationQuestion(
-          `I'm not entirely sure about this transaction. Did you mean to ${parsed.description.toLowerCase()}? ` +
-          `(Debiting ${parsed.debitAccount} and crediting ${parsed.creditAccount} for $${parsed.debitAmount.toFixed(2)})`
-        )
+      const clarification = resolveClarificationQuestion(parsed)
+      if (clarification) {
+        setClarificationQuestion(clarification)
       }
 
       setPendingEntry({ parsed, originalInput: input })

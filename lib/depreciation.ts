@@ -1,4 +1,4 @@
-import type { JournalEntry, PlantAsset } from '@/lib/accounting-types'
+import type { JournalEntry, ParsedTransaction, PlantAsset } from '@/lib/accounting-types'
 import { addAccountManual } from '@/lib/accounting-types'
 import type { JournalEntryInsertPayload } from '@/lib/supabase/journal-entries'
 
@@ -15,6 +15,38 @@ export function isDepreciablePlantPurchase(debitAccount: string): boolean {
   return DEPRECIABLE_ASSET_ACCOUNTS.includes(
     debitAccount as (typeof DEPRECIABLE_ASSET_ACCOUNTS)[number]
   )
+}
+
+export function defaultPlantAssetClarificationMessage(): string {
+  return (
+    'To record this plant asset, please provide:\n' +
+    '1. What is the specific name of the equipment or plant asset? (e.g. "Delivery Truck")\n' +
+    '2. What was the purchase date? (YYYY-MM-DD)'
+  )
+}
+
+/** Pick the clarification prompt shown to the user after parsing. */
+export function resolveClarificationQuestion(parsed: ParsedTransaction): string | null {
+  if (parsed.messageToUser?.trim()) {
+    return parsed.messageToUser.trim()
+  }
+
+  const isPlantPurchase = isDepreciablePlantPurchase(parsed.debitAccount)
+  const missingName = !parsed.plantAssetSpecificName?.trim()
+  const detailsIncomplete = parsed.plantAssetDetailsComplete === false
+
+  if (isPlantPurchase && (missingName || detailsIncomplete)) {
+    return defaultPlantAssetClarificationMessage()
+  }
+
+  if (parsed.confidence < 0.8) {
+    return (
+      `I'm not entirely sure about this transaction. Did you mean to ${parsed.description.toLowerCase()}? ` +
+      `(Debiting ${parsed.debitAccount} and crediting ${parsed.creditAccount} for $${parsed.debitAmount.toFixed(2)})`
+    )
+  }
+
+  return null
 }
 
 export function depreciationExpenseAccount(assetName: string): string {

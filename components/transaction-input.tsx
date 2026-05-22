@@ -92,7 +92,9 @@ export function TransactionInput() {
     setShowManualEntry(false)
   }
 
-  const isLowConfidence = pendingEntry && pendingEntry.parsed.confidence < 0.8
+  const needsClarification = !!clarificationQuestion
+  const isLowConfidence =
+    needsClarification || (pendingEntry != null && pendingEntry.parsed.confidence < 0.8)
 
   return (
     <div className="space-y-4">
@@ -279,12 +281,12 @@ export function TransactionInput() {
 
                 {clarificationQuestion && (
                   <form onSubmit={handleClarification} className="space-y-2">
-                    <p className="text-sm text-warning-foreground bg-warning/10 px-3 py-2 rounded-md">
+                    <p className="text-sm text-warning-foreground bg-warning/10 px-3 py-2 rounded-md whitespace-pre-line">
                       {clarificationQuestion}
                     </p>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Provide more details..."
+                        placeholder='e.g. "Delivery Truck", purchased 2024-03-15'
                         value={clarificationAnswer}
                         onChange={(e) => setClarificationAnswer(e.target.value)}
                         className="flex-1"
@@ -297,7 +299,7 @@ export function TransactionInput() {
                 )}
 
                 <div className="flex items-center gap-2 pt-1">
-                  <Button size="sm" onClick={handleConfirm}>
+                  <Button size="sm" onClick={handleConfirm} disabled={needsClarification}>
                     <Check className="mr-1.5 h-4 w-4" />
                     Confirm
                   </Button>

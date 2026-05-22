@@ -4,19 +4,20 @@ import { z } from 'zod'
 
 import { ACCOUNTS } from '@/lib/accounting-types'
 
-// todo later: add accounts manually/ over time as needed
-//var allAccounts: string[] = ["Cash", "Accounts Receivable", "Office Supplies", "Equipment", "Accounts Payable", "Notes Payable", "Bank Loan", "Owner\'s Capital", "Service Revenue", "Sales Revenue", "Rent Expense", "Utilities Expense", "Salaries Expense", "Office Supplies Expense"]
-
-function accountsToString(){
-  let result = ""
+function accountsToString() {
+  let result = ''
   for (let i = 0; i < ACCOUNTS.length; i++) {
-    result += ACCOUNTS[i].name + ", ";
+    result += ACCOUNTS[i].name + ', '
   }
-  return result.slice(0, -2); // remove trailing comma and space
+  return result.slice(0, -2)
 }
 
 const transactionSchema = z.object({
-  date: z.string().describe('The date of the transaction in YYYY-MM-DD format, use today if not specified'),
+  date: z
+    .string()
+    .describe(
+      'Purchase/transaction date in YYYY-MM-DD. For plant asset purchases, only use today if the user clearly means today; otherwise leave uncertain and ask.'
+    ),
   description: z.string().describe('A clear, professional description of the transaction'),
   debitAccount: z.string().describe('The account to debit. Must be one of: ' + accountsToString()),
   debitAmount: z.number().describe('The amount to debit'),
@@ -27,9 +28,19 @@ const transactionSchema = z.object({
     .string()
     .nullable()
     .describe(
-      'When purchasing plant property or equipment (debit Equipment or Prepaid Equipment), the short specific name of that asset only, e.g. "Delivery Truck" or "Office Copier". Otherwise the user must be asked for clarification.'
+      'When debiting Equipment or Prepaid Equipment: short asset label only (e.g. "Delivery Truck"). Null if the user did not give a specific name.'
     ),
-    
+  plantAssetDetailsComplete: z
+    .boolean()
+    .describe(
+      'True if this is NOT a plant/equipment purchase, OR the user clearly provided BOTH a specific asset name AND an explicit purchase date. False if either is missing.'
+    ),
+  messageToUser: z
+    .string()
+    .nullable()
+    .describe(
+      'When plantAssetDetailsComplete is false, ask the user specifically for the missing plant asset name and/or purchase date. Use direct questions. Null when no clarification is needed.'
+    ),
 })
 
 export async function POST(request: Request) {
@@ -53,24 +64,32 @@ Common patterns:
 - "Received loan" = Debit Cash, Credit Bank Loan
 - "Bought supplies" = Debit Office Supplies Expense, Credit Cash
 - "Paid utilities" = Debit Utilities Expense, Credit Cash
-- "Bought a delivery truck for $25,000" = Debit Equipment, Credit Cash; set plantAssetSpecificName to "Delivery Truck"
-- "Bought equipment (vaguely)" = Debit Equipment, Credit Cash; set plantAssetSpecificName to null and ask the user for clarification.
+- "Bought a delivery truck for $25,000 on 2024-06-01" = Debit Equipment, Credit Cash; plantAssetSpecificName "Delivery Truck"; plantAssetDetailsComplete true; messageToUser null
+- "Bought equipment for $5,000" = Debit Equipment, Credit Cash; plantAssetSpecificName null; plantAssetDetailsComplete false; messageToUser MUST ask for name and purchase date
 
-Today's date is ${todayDate}. Use this date if no specific date is mentioned.
+Today's date is ${todayDate}. For non-plant transactions, use this date when no date is mentioned.
 
-For equipment or other depreciable plant asset purchases, always set plantAssetSpecificName to a concise asset label (not the full sentence description). If one is not provided (e.g., the user says "bought equipment") then follow up with a question to get the specific name.
+PLANT ASSET / EQUIPMENT PURCHASES (debit Equipment or Prepaid Equipment):
+- plantAssetSpecificName: concise label ONLY if the user named the asset; otherwise null
+- plantAssetDetailsComplete: false unless BOTH (a) a specific asset name and (b) an explicit purchase date appear in the user's text (not guessed)
+- When plantAssetDetailsComplete is false:
+  - Set confidence below 0.8
+  - Set messageToUser to ask ONLY for what is missing, using clear direct questions, for example:
+    "What is the specific name of the plant asset or equipment you purchased?"
+    "What was the purchase date of the equipment? (Please use YYYY-MM-DD.)"
+  - If both are missing, ask for BOTH in messageToUser (two short questions or numbered list)
+  - Do NOT use a generic "I'm not sure about this transaction" message for plant assets—always ask about name and/or purchase date
+- When plantAssetDetailsComplete is true: messageToUser must be null
 
-Set confidence based on how clear the transaction description is:
+Set confidence for other transactions:
 - 0.9-1.0: Very clear, unambiguous transaction
 - 0.7-0.9: Reasonably clear but some interpretation needed
 - 0.5-0.7: Ambiguous, multiple valid interpretations possible
 - Below 0.5: Very unclear, mostly guessing
 
 If the transaction involves an account not in the list, create a new account with a descriptive name and add it to the list of accounts.
-
-For further clarification, ask the user for the specific name and purchase date of the plant asset, with something like "What is the specific name of the equipment you bought?" and "What is the purchase date of the equipment you bought?"
 `
-//use claude haiku 4.5
+
   const { output } = await generateText({
     model: anthropic('claude-haiku-4-5'),
     output: Output.object({
