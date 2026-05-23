@@ -16,35 +16,15 @@ const SLICE_COLORS = [
   '#f59e0b',
 ]
 
-type AssetSlice = { account: string; amount: number }
-
-function buildAssetChartData(
-  assets: { account: string; amount: number }[],
-  plantAssets: { specificName: string; netBookValue: number }[]
-): AssetSlice[] {
-  const slices: AssetSlice[] = []
-
-  for (const asset of assets) {
-    if (asset.amount > 0) {
-      slices.push({ account: asset.account, amount: asset.amount })
-    }
-  }
-
-  for (const plant of plantAssets) {
-    if (plant.netBookValue > 0) {
-      slices.push({ account: plant.specificName, amount: plant.netBookValue })
-    }
-  }
-
-  return slices
-}
-
 export function PieChartAssets() {
   const { balanceSheet } = useAccounting()
 
   const chartData = useMemo(
-    () => buildAssetChartData(balanceSheet.assets, balanceSheet.plantAssets),
-    [balanceSheet.assets, balanceSheet.plantAssets]
+    () =>
+      balanceSheet.assets
+        .filter((asset) => asset.amount > 0)
+        .map((asset) => ({ account: asset.account, amount: asset.amount })),
+    [balanceSheet.assets]
   )
 
   if (chartData.length === 0) {
@@ -53,6 +33,39 @@ export function PieChartAssets() {
         Record transactions to see asset composition.
       </div>
     )
+  }
+
+  const chartColors = {
+    'Cash': '#10b981',
+    'Accounts Receivable': '#f59e0b',
+    'Office Supplies': '#6366f1',
+    'Equipment': '#f43f5e',
+    'Inventory': '#14b8a6',
+    'Prepaid Rent': '#f59e0b',
+    'Prepaid Insurance': '#10b981',
+    'Prepaid Utilities': '#6366f1',
+    'Prepaid Salaries': '#f43f5e',
+    'Prepaid Office Supplies': '#14b8a6',
+    'Prepaid Equipment': '#6366f1',
+    'Prepaid Inventory': '#f59e0b',
+    'Accounts Payable': '#10b981',
+    'Notes Payable': '#f43f5e',
+    'Bank Loan': '#6366f1',
+    'Owner\'s Capital': '#14b8a6',
+    'Service Revenue': '#f59e0b',
+    'Sales Revenue': '#10b981',
+    'Rent Expense': '#6366f1',
+    'Utilities Expense': '#f43f5e',
+    'Salaries Expense': '#14b8a6',
+    'Office Supplies Expense': '#f59e0b',
+    'Inventory Expense': '#6366f1',
+    'Prepaid Rent Expense': '#f43f5e',
+    'Prepaid Insurance Expense': '#10b981',
+    'Prepaid Utilities Expense': '#6366f1',
+    'Prepaid Salaries Expense': '#f43f5e',
+    'Prepaid Office Supplies Expense': '#14b8a6',
+    'Prepaid Equipment Expense': '#6366f1',
+    'Prepaid Inventory Expense': '#f59e0b',
   }
 
   return (
@@ -72,7 +85,7 @@ export function PieChartAssets() {
             strokeWidth={2}
           >
             {chartData.map((_, index) => (
-              <Cell key={chartData[index]!.account} fill={SLICE_COLORS[index % SLICE_COLORS.length]} />
+              <Cell key={chartData[index]!.account} fill={chartColors[chartData[index]!.account as keyof typeof chartColors] || SLICE_COLORS[index % SLICE_COLORS.length]} />
             ))}
           </Pie>
           <Tooltip

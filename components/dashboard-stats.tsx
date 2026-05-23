@@ -28,7 +28,7 @@ export function DashboardStats() {
       title: 'Cash',
       value: formatCurrency(cashBalance),
       icon: DollarSign,
-      description: 'Cash on hand',
+      description: 'On hand',
       trend: 'neutral',
     },
     {
@@ -73,8 +73,8 @@ export function DashboardStats() {
       ))}
       <Card className="col-span-full md:col-span-2 lg:col-span-4">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Asset Composition
+          <CardTitle className="text-lg font-semibold text-foreground">
+            Assets
           </CardTitle>
           <PieChart className="h-4 w-4 text-muted-foreground" aria-hidden />
         </CardHeader>

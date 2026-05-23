@@ -5,7 +5,6 @@ import type {
   TrialBalanceRow,
   IncomeStatementData,
   BalanceSheetData,
-  BalanceSheetPlantAsset,
   AccountType,
   PlantAsset,
 } from './accounting-types'
@@ -16,6 +15,7 @@ import {
 } from './accounting-types'
 import {
   accumulatedDepreciationAccount,
+  DEPRECIABLE_ASSET_ACCOUNTS,
   plantAssetLabel,
 } from './depreciation'
 import {
@@ -210,32 +210,37 @@ export function calculateIncomeStatement(ledgers: Ledger[]): IncomeStatementData
   }
 }
 
-function buildPlantAssetBalanceSheetLines(
-  plantAssets: PlantAsset[],
-  ledgers: Ledger[]
-): BalanceSheetPlantAsset[] {
-  return plantAssets.map((asset) => {
-    const label = plantAssetLabel(asset)
-    const accDepLedger = ledgers.find((l) => l.account === accumulatedDepreciationAccount(label))
-    const accumulatedDepreciation = accDepLedger?.balance ?? 0
-    const netBookValue = Math.max(0, asset.cost - accumulatedDepreciation)
-    return {
-      specificName: label,
-      account: asset.account,
-      cost: asset.cost,
-      accumulatedDepreciation,
-      netBookValue,
-    }
-  })
+/** Net book value for Equipment / Prepaid Equipment (one line per account on the balance sheet). */
+function netBookForDepreciableAccount(
+  accountName: (typeof DEPRECIABLE_ASSET_ACCOUNTS)[number],
+  ledgers: Ledger[],
+  plantAssets: PlantAsset[]
+): number {
+  const relatedPlants = plantAssets.filter((p) => p.account === accountName)
+  if (relatedPlants.length > 0) {
+    return relatedPlants.reduce((sum, asset) => {
+      const label = plantAssetLabel(asset)
+      const accDep =
+        ledgers.find((l) => l.account === accumulatedDepreciationAccount(label))?.balance ?? 0
+      return sum + Math.max(0, asset.cost - accDep)
+    }, 0)
+  }
+
+  const gross = ledgers.find((l) => l.account === accountName)?.balance ?? 0
+  if (gross <= 0) return 0
+
+  const accDepTotal = ledgers
+    .filter((l) => isAccumulatedDepreciationAccount(l.account))
+    .reduce((sum, l) => sum + l.balance, 0)
+  return Math.max(0, gross - accDepTotal)
 }
 
-function isExcludedFromBalanceSheetAssets(account: string, hasPlantAssets: boolean): boolean {
+function isExcludedFromBalanceSheetAssets(account: string): boolean {
   if (isDepreciationExpenseAccount(account)) return true
-  if (hasPlantAssets) {
-    if (account === 'Equipment' || account === 'Prepaid Equipment') return true
-    if (isAccumulatedDepreciationAccount(account)) return true
-  }
-  return false
+  if (isAccumulatedDepreciationAccount(account)) return true
+  return DEPRECIABLE_ASSET_ACCOUNTS.includes(
+    account as (typeof DEPRECIABLE_ASSET_ACCOUNTS)[number]
+  )
 }
 
 /** Amount contributed to total assets (contra-assets subtract). */
@@ -257,12 +262,9 @@ export function calculateBalanceSheet(
   const assets: { account: string; amount: number }[] = []
   const liabilities: { account: string; amount: number }[] = []
   const equity: { account: string; amount: number }[] = []
-  const hasPlantAssets = plantAssets.length > 0
-  const plantAssetLines = buildPlantAssetBalanceSheetLines(plantAssets, ledgers)
-
   ledgers.forEach(ledger => {
     if (ledger.balance === 0) return
-    if (isExcludedFromBalanceSheetAssets(ledger.account, hasPlantAssets)) return
+    if (isExcludedFromBalanceSheetAssets(ledger.account)) return
 
     if (ledger.accountType === 'asset') {
       const amount = balanceSheetAssetContribution(ledger)
@@ -275,15 +277,20 @@ export function calculateBalanceSheet(
     }
   })
 
-  const regularAssetTotal = assets.reduce((sum, a) => sum + a.amount, 0)
-  const plantAssetTotal = plantAssetLines.reduce((sum, p) => sum + p.netBookValue, 0)
-  const totalAssets = regularAssetTotal + plantAssetTotal
+  for (const accountName of DEPRECIABLE_ASSET_ACCOUNTS) {
+    const amount = netBookForDepreciableAccount(accountName, ledgers, plantAssets)
+    if (amount > 0) {
+      assets.push({ account: accountName, amount })
+    }
+  }
+
+  const totalAssets = assets.reduce((sum, a) => sum + a.amount, 0)
   const totalLiabilities = liabilities.reduce((sum, l) => sum + l.amount, 0)
   const totalEquity = equity.reduce((sum, e) => sum + e.amount, 0) + netIncome
 
   return {
     assets,
-    plantAssets: plantAssetLines,
+    plantAssets: [],
     liabilities,
     equity,
     totalAssets,

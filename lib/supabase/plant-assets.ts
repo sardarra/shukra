@@ -114,6 +114,59 @@ export async function syncPlantAssetsFromJournalEntries(
   return getPlantAssetsForUser(userId)
 }
 
+/** Remove plant asset row(s) tied to a journal entry (e.g. equipment purchase). */
+export async function deletePlantAssetsByJournalEntryId(
+  userId: string,
+  journalEntryId: string
+): Promise<void> {
+  const supabase = await createSupabaseServerClient()
+  const { error } = await supabase
+    .from('plantAssets')
+    .delete()
+    .eq('user_id', userId)
+    .eq('journal_entry_id', journalEntryId)
+
+  if (error) {
+    console.error('Failed deleting plantAsset for journal entry:', error)
+  }
+}
+
+/** Drop plant assets whose purchase journal entry no longer exists. */
+export async function pruneOrphanedPlantAssets(
+  userId: string,
+  entries: JournalEntry[]
+): Promise<void> {
+  const supabase = await createSupabaseServerClient()
+  const validJournalIds = new Set(
+    entries
+      .map((e) => (e.id.startsWith('db:') ? e.id.slice(3) : e.id))
+      .filter((id) => id.length > 0 && !id.startsWith('pending:'))
+  )
+
+  const { data, error } = await supabase
+    .from('plantAssets')
+    .select('id, journal_entry_id')
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Failed loading plantAssets for prune:', error)
+    return
+  }
+
+  for (const row of data ?? []) {
+    if (row.journal_entry_id && !validJournalIds.has(row.journal_entry_id)) {
+      const { error: deleteError } = await supabase
+        .from('plantAssets')
+        .delete()
+        .eq('id', row.id)
+        .eq('user_id', userId)
+      if (deleteError) {
+        console.error('Failed pruning orphaned plantAsset:', deleteError)
+      }
+    }
+  }
+}
+
 export async function markPlantAssetDepreciated(
   plantAssetId: string,
   asOf: Date = new Date()

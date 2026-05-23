@@ -2,7 +2,16 @@ import { z } from 'zod'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { JournalEntry } from '@/lib/accounting-types'
 import { isDepreciablePlantPurchase } from '@/lib/depreciation'
-import { createPlantAssetFromPurchase } from '@/lib/supabase/plant-assets'
+import {
+  createPlantAssetFromPurchase,
+  deletePlantAssetsByJournalEntryId,
+} from '@/lib/supabase/plant-assets'
+
+export function journalEntryIdToDbKey(entryId: string): string | null {
+  if (entryId.startsWith('db:')) return entryId.slice(3)
+  if (/^\d+$/.test(entryId)) return entryId
+  return null
+}
 
 const journalEntryInsertSchema = z.object({
   description: z.string(),
@@ -147,5 +156,45 @@ export async function getJournalEntriesByUserId(): Promise<{
   } catch (error) {
     console.error('Unexpected error in getJournalEntriesByUserId:', error)
     return { ok: false, entries: [], error: 'Unexpected error while loading journal entries' }
+  }
+}
+
+/** Delete a journal row and any plant asset created from that purchase entry. */
+export async function deleteJournalEntryFromSupabase(
+  entryId: string
+): Promise<{ ok: boolean; error: string | null }> {
+  const dbId = journalEntryIdToDbKey(entryId)
+  if (!dbId) {
+    return { ok: false, error: 'Cannot delete entry that was not saved to the database' }
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return { ok: false, error: 'Unauthorized' }
+    }
+
+    await deletePlantAssetsByJournalEntryId(user.id, dbId)
+
+    const { error } = await supabase
+      .from('journalEntries')
+      .delete()
+      .eq('id', dbId)
+      .eq('user_id', user.id)
+
+    if (error) {
+      console.error('Failed deleting journalEntries row:', error)
+      return { ok: false, error: 'Failed to delete journal entry' }
+    }
+
+    return { ok: true, error: null }
+  } catch (error) {
+    console.error('Unexpected delete failure in deleteJournalEntryFromSupabase:', error)
+    return { ok: false, error: 'Unexpected error while deleting journal entry' }
   }
 }

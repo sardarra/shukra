@@ -19,7 +19,6 @@ export function BalanceSheetView() {
 
   const hasData =
     balanceSheet.assets.length > 0 ||
-    balanceSheet.plantAssets.length > 0 ||
     balanceSheet.liabilities.length > 0 ||
     balanceSheet.equity.length > 0
 
@@ -70,42 +69,12 @@ export function BalanceSheetView() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : balanceSheet.plantAssets.length === 0 ? (
+              ) : (
                 <TableRow>
                   <TableCell colSpan={2} className="pl-6 text-muted-foreground italic">
                     No assets recorded
                   </TableCell>
                 </TableRow>
-              ) : null}
-              {balanceSheet.plantAssets.length > 0 && (
-                <>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={2} className="font-semibold pl-6">
-                      Plant & Equipment
-                    </TableCell>
-                  </TableRow>
-                  {balanceSheet.plantAssets.map((item) => (
-                    <TableRow key={item.specificName}>
-                      <TableCell className="pl-10">
-                        <div>
-                          <span>{item.specificName}</span>
-                          <span className="text-muted-foreground text-xs ml-2">
-                            ({item.account})
-                          </span>
-                        </div>
-                        {item.accumulatedDepreciation > 0 && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatCurrency(item.cost)} cost −{' '}
-                            {formatCurrency(item.accumulatedDepreciation)} depreciation
-                          </p>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.netBookValue)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </>
               )}
               <TableRow className="bg-muted/70 hover:bg-muted/70 font-semibold">
                 <TableCell>Total Assets</TableCell>

@@ -2,9 +2,10 @@ import { z } from 'zod'
 import { syncDepreciationForCurrentUser } from '@/lib/supabase/depreciation'
 import {
   addJournalEntryToSupabase,
+  deleteJournalEntryFromSupabase,
   getJournalEntriesByUserId,
 } from '@/lib/supabase/journal-entries'
-import { getPlantAssetsForUser } from '@/lib/supabase/plant-assets'
+import { getPlantAssetsForUser, pruneOrphanedPlantAssets } from '@/lib/supabase/plant-assets'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 const persistJournalEntrySchema = z.object({
@@ -52,12 +53,52 @@ export async function GET() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  if (user) {
+    await pruneOrphanedPlantAssets(user.id, result.entries)
+  }
   const plantAssets = user ? await getPlantAssetsForUser(user.id) : []
 
   return Response.json({
     ok: true,
     error: null,
     entries: result.entries,
+    plantAssets,
+  })
+}
+
+export async function DELETE(request: Request) {
+  const id = new URL(request.url).searchParams.get('id')
+  if (!id) {
+    return Response.json({ ok: false, error: 'Missing entry id' }, { status: 400 })
+  }
+
+  const result = await deleteJournalEntryFromSupabase(id)
+  if (!result.ok) {
+    const status =
+      result.error === 'Unauthorized'
+        ? 401
+        : result.error === 'Cannot delete entry that was not saved to the database'
+          ? 400
+          : 500
+    return Response.json(result, { status })
+  }
+
+  const entriesResult = await getJournalEntriesByUserId()
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user && entriesResult.ok) {
+    await pruneOrphanedPlantAssets(user.id, entriesResult.entries)
+  }
+
+  const plantAssets = user ? await getPlantAssetsForUser(user.id) : []
+
+  return Response.json({
+    ok: true,
+    error: null,
+    entries: entriesResult.ok ? entriesResult.entries : [],
     plantAssets,
   })
 }

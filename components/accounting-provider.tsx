@@ -55,7 +55,7 @@ interface AccountingContextType extends AccountingState {
   parseTransaction: (input: string) => Promise<void>
   confirmEntry: () => void
   cancelEntry: () => void
-  deleteEntry: (id: string) => void
+  deleteEntry: (id: string) => void | Promise<void>
   answerClarification: (answer: string) => Promise<void>
   addManualEntry: (entry: ParsedTransaction) => void
 }
@@ -240,8 +240,35 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     setClarificationQuestion(null)
   }, [])
 
-  const deleteEntry = useCallback((id: string) => {
-    setJournalEntries((prev) => prev.filter((entry) => entry.id !== id))
+  const deleteEntry = useCallback(async (id: string) => {
+    const dbKey = id.startsWith('db:') ? id.slice(3) : /^\d+$/.test(id) ? id : null
+
+    if (!dbKey) {
+      setJournalEntries((prev) => prev.filter((entry) => entry.id !== id))
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/journal-entries?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      })
+      const data = (await response.json().catch(() => ({}))) as {
+        entries?: JournalEntry[]
+        plantAssets?: PlantAsset[]
+        error?: string
+      }
+
+      if (!response.ok) {
+        setError(data.error ?? 'Failed to delete journal entry.')
+        return
+      }
+
+      setError(null)
+      setJournalEntries(Array.isArray(data.entries) ? data.entries : [])
+      setPlantAssets(Array.isArray(data.plantAssets) ? data.plantAssets : [])
+    } catch {
+      setError('Failed to delete journal entry.')
+    }
   }, [])
 
   const answerClarification = useCallback(async (answer: string) => {
