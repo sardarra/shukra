@@ -1,4 +1,5 @@
 import { BalanceSheetView } from '@/components/balance-sheet-view'
+import { BalanceSheetExportButton } from '@/components/balance-sheet-export-button'
 import { PageHeader } from '@/components/page-header'
 
 export default function BalanceSheetPage() {
@@ -10,6 +11,7 @@ export default function BalanceSheetPage() {
       />
 
       <BalanceSheetView />
+      <BalanceSheetExportButton />
     </div>
   )
 }

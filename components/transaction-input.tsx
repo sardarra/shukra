@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { formatCurrency, getTodayDate } from '@/lib/accounting-store'
-import { Check, X, AlertTriangle, PenLine, ArrowUp } from 'lucide-react'
+import { Check, X, AlertTriangle, PenLine, ArrowUp, Zap } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { ACCOUNT_NAMES, type AccountName } from '@/lib/accounting-types'
 import { isDepreciablePlantPurchase } from '@/lib/depreciation'
+import { DAILY_QUOTA } from '@/lib/supabase/rate-limit'
 
 type TransactionInputProps = {
   variant?: 'inline' | 'floating'
@@ -48,12 +49,26 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
     isLoading,
     error,
     clarificationQuestion,
+    promptsRemaining,
+    promptsResetAt,
   } = useAccounting()
+
+  // Quota is exhausted when we know the count and it's 0
+  const isQuotaExhausted = promptsRemaining !== null && promptsRemaining <= 0
+
+  /** Format the reset timestamp as a local time string, e.g. "12:00 AM" */
+  function formatResetTime(resetAt: string | null): string {
+    if (!resetAt) return 'midnight'
+    return new Date(resetAt).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  }
 
   const isFloating = variant === 'floating'
 
   const submitInput = async () => {
-    if (!input.trim() || isLoading || pendingEntry) return
+    if (!input.trim() || isLoading || pendingEntry || isQuotaExhausted) return
     await parseTransaction(input.trim())
     setInput('')
   }
@@ -115,7 +130,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
   const isLowConfidence =
     needsClarification || (pendingEntry != null && pendingEntry.parsed.confidence < 0.8)
 
-  const hasOverlay = !!(pendingEntry || error || (showManualEntry && !pendingEntry))
+  const hasOverlay = !!(pendingEntry || error || isQuotaExhausted || (showManualEntry && !pendingEntry))
 
   const inputForm = (
     <form onSubmit={handleSubmit}>
@@ -129,7 +144,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
           placeholder="Describe your transaction in plain English."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={isLoading || !!pendingEntry}
+          disabled={isLoading || !!pendingEntry || isQuotaExhausted}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
@@ -144,7 +159,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
         <Button
           type="submit"
           size="icon"
-          disabled={!input.trim() || isLoading || !!pendingEntry}
+          disabled={!input.trim() || isLoading || !!pendingEntry || isQuotaExhausted}
           className="absolute bottom-3 left-3 h-9 w-9 rounded-full shrink-0"
           aria-label={isLoading ? 'Parsing transaction' : 'Submit transaction'}
         >
@@ -154,6 +169,14 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
             <ArrowUp className="h-4 w-4" />
           )}
         </Button>
+
+        {/* Quota badge — shown when we know the count */}
+        {promptsRemaining !== null && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 text-xs text-muted-foreground select-none">
+            <Zap className="h-3 w-3" />
+            <span>{promptsRemaining} of {DAILY_QUOTA} remaining</span>
+          </div>
+        )}
       </div>
     </form>
   )
@@ -293,6 +316,18 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
     </Card>
   )
 
+  const quotaExhaustedCard = isQuotaExhausted && (
+    <Card className="border-orange-400 bg-orange-50 dark:bg-orange-950/20 shadow-lg">
+      <CardContent className="flex items-center gap-3 py-3">
+        <Zap className="h-5 w-5 text-orange-500 flex-shrink-0" />
+        <p className="text-sm text-orange-700 dark:text-orange-400">
+          Daily AI prompt limit reached. Resets at{' '}
+          <span className="font-medium">{formatResetTime(promptsResetAt)}</span>.
+        </p>
+      </CardContent>
+    </Card>
+  )
+
   const pendingCard = pendingEntry && (
     
     <Card
@@ -381,6 +416,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
         {inputForm}
         {manualEntryToggle}
         {manualEntryForm}
+        {quotaExhaustedCard}
         {errorCard}
         {pendingCard}
       </div>
@@ -399,6 +435,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
         >
           <div className="mx-auto max-w-6xl w-full space-y-3 max-h-[min(50vh,24rem)] overflow-y-auto pointer-events-auto">
             {manualEntryForm}
+            {quotaExhaustedCard}
             {errorCard}
             {pendingCard}
           </div>

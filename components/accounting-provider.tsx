@@ -52,6 +52,10 @@ interface AccountingContextType extends AccountingState {
   isLoading: boolean
   error: string | null
   clarificationQuestion: string | null
+  /** Remaining AI prompts for today. null = unknown (fetch in progress or failed). */
+  promptsRemaining: number | null
+  /** UTC ISO timestamp when the daily quota resets. */
+  promptsResetAt: string | null
   parseTransaction: (input: string) => Promise<void>
   confirmEntry: () => void
   cancelEntry: () => void
@@ -90,6 +94,8 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [clarificationQuestion, setClarificationQuestion] = useState<string | null>(null)
+  const [promptsRemaining, setPromptsRemaining] = useState<number | null>(null)
+  const [promptsResetAt, setPromptsResetAt] = useState<string | null>(null)
 
   const isInitialLoad = !isAuthReady || (!!user && isEntriesLoading)
 
@@ -149,6 +155,31 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthReady, user?.id])
 
+  // Fetch initial quota when the user is authenticated
+  useEffect(() => {
+    if (!isAuthReady || !user) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await fetch('/api/usage', { method: 'GET' })
+        if (cancelled) return
+        if (response.ok) {
+          const data = (await response.json()) as { remaining: number; resetAt: string }
+          setPromptsRemaining(data.remaining)
+          setPromptsResetAt(data.resetAt)
+        }
+        // On failure, leave promptsRemaining as null (indeterminate — UI stays enabled)
+      } catch {
+        // Network error — leave indeterminate
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthReady, user?.id])
+
   const persistEntry = useCallback(
     async (entry: JournalEntry, options?: { plantAssetSpecificName?: string | null }) => {
       try {
@@ -198,18 +229,42 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ transaction: input, todayDate: getTodayDate() }),
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to parse transaction')
+      if (response.status === 429) {
+        const data = (await response.json().catch(() => ({}))) as {
+          remaining?: number
+          resetAt?: string
+        }
+        setPromptsRemaining(0)
+        if (data.resetAt) setPromptsResetAt(data.resetAt)
+        // Don't set a generic error — the UI will show the quota message
+        return
       }
 
-      const parsed: ParsedTransaction = await response.json()
+      if (!response.ok) {
+        // Non-200, non-429: preserve existing quota display, show error
+        setError('Failed to parse transaction. Please try again.')
+        return
+      }
 
-      const clarification = resolveClarificationQuestion(parsed)
+      const data = (await response.json()) as {
+        remaining?: number
+        resetAt?: string
+        [key: string]: unknown
+      }
+
+      // Update quota from response
+      if (typeof data.remaining === 'number') setPromptsRemaining(data.remaining)
+      if (typeof data.resetAt === 'string') setPromptsResetAt(data.resetAt)
+
+      // Strip quota fields before treating as ParsedTransaction
+      const { remaining: _r, resetAt: _ra, ...parsed } = data
+
+      const clarification = resolveClarificationQuestion(parsed as ParsedTransaction)
       if (clarification) {
         setClarificationQuestion(clarification)
       }
 
-      setPendingEntry({ parsed, originalInput: input })
+      setPendingEntry({ parsed: parsed as ParsedTransaction, originalInput: input })
     } catch {
       setError('Failed to parse transaction. Please try again.')
     } finally {
@@ -299,6 +354,8 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     clarificationQuestion,
+    promptsRemaining,
+    promptsResetAt,
     parseTransaction,
     confirmEntry,
     cancelEntry,

@@ -3,6 +3,7 @@ import { anthropic } from '@ai-sdk/anthropic'
 import { z } from 'zod'
 
 import { ACCOUNTS } from '@/lib/accounting-types'
+import { checkAndIncrementUsage } from '@/lib/supabase/rate-limit'
 
 function accountsToString() {
   let result = ''
@@ -44,6 +45,26 @@ const transactionSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  // Enforce daily quota before invoking the AI model
+  const rateLimit = await checkAndIncrementUsage()
+
+  if (!rateLimit.allowed) {
+    if (rateLimit.status === 401) {
+      return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+    }
+    if (rateLimit.status === 429) {
+      return Response.json(
+        { ok: false, error: 'Daily prompt limit reached', remaining: 0, resetAt: rateLimit.resetAt },
+        { status: 429 }
+      )
+    }
+    // 503 — Supabase unavailable
+    return Response.json(
+      { ok: false, error: 'Service temporarily unavailable. Please try again.' },
+      { status: 503 }
+    )
+  }
+
   const { transaction, todayDate } = await request.json()
 
   const systemPrompt = `You are an expert accountant who converts plain English transaction descriptions into proper double-entry journal entries.
@@ -99,5 +120,9 @@ If the transaction involves an account not in the list, create a new account wit
     prompt: `Parse this transaction into a journal entry: "${transaction}"`,
   })
 
-  return Response.json(output)
+  return Response.json({
+    ...output,
+    remaining: rateLimit.remaining,
+    resetAt: rateLimit.resetAt,
+  })
 }

@@ -1,0 +1,5 @@
+{"sessionId":"2cb0ce","hypothesisId":"E","location":"income-statement-export-button.tsx:handleDownload","message":"export button clicked","data":{"ledgerCount":6},"timestamp":1779553081646}
+{"sessionId":"2cb0ce","hypothesisId":"C","location":"export-to-xlsx.tsx:exportIncomeStatementToXlsx:entry","message":"export income statement called","data":{"ledgerCount":6,"revenueLedgers":1,"expenseLedgers":1,"writeFileType":"function"},"timestamp":1779553081647}
+{"sessionId":"2cb0ce","hypothesisId":"B","location":"export-to-xlsx.tsx:exportIncomeStatementToXlsx:computed","message":"income statement computed","data":{"revenueRows":1,"expenseRows":1,"totalRevenue":30,"totalExpenses":50,"netIncome":-20},"timestamp":1779553081648}
+{"sessionId":"2cb0ce","hypothesisId":"A","location":"export-to-xlsx.tsx:exportIncomeStatementToXlsx:beforeWrite","message":"about to writeFile","data":{"sheetNames":["Revenues","Expenses","Summary"]},"timestamp":1779553081649}
+{"sessionId":"2cb0ce","hypothesisId":"A","location":"export-to-xlsx.tsx:exportIncomeStatementToXlsx:success","message":"writeFile completed","data":{},"timestamp":1779553081656}
