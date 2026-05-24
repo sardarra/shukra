@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { DAILY_QUOTA } from '@/lib/rate-limit-constants'
 
-export const DAILY_QUOTA = 6
+export { DAILY_QUOTA } from '@/lib/rate-limit-constants'
 
 /** Returns today's date as a YYYY-MM-DD string in UTC. */
 function utcDateString(): string {

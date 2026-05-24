@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { ACCOUNT_NAMES, type AccountName } from '@/lib/accounting-types'
 import { isDepreciablePlantPurchase } from '@/lib/depreciation'
-import { DAILY_QUOTA } from '@/lib/supabase/rate-limit'
+import { DAILY_QUOTA } from '@/lib/rate-limit-constants'
 
 type TransactionInputProps = {
   variant?: 'inline' | 'floating'
