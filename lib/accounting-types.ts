@@ -96,7 +96,8 @@ export interface PlantAsset {
   usefulLifeYears: number
   purchaseDate: string   // ISO date string
   lastDepreciatedDate: string | null  // track when we last ran depreciation
-  createdAt: string
+  createdAt: string,
+  associatedJournalEntry: string
 }
 
 export const ACCOUNT_NAMES = [
