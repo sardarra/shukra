@@ -96,8 +96,8 @@ export interface PlantAsset {
   usefulLifeYears: number
   purchaseDate: string   // ISO date string
   lastDepreciatedDate: string | null  // track when we last ran depreciation
-  createdAt: string,
-  associatedJournalEntry: string
+  createdAt: string
+  associatedJournalEntry: string | null
 }
 
 export const ACCOUNT_NAMES = [
@@ -143,7 +143,8 @@ export let ACCOUNTS: Account[] = [
   { name: 'Salaries Expense', type: 'expense', normalBalance: 'debit' },
   { name: 'Office Supplies Expense', type: 'expense', normalBalance: 'debit' },
   { name: 'Inventory Expense', type: 'expense', normalBalance: 'debit' },
-  
+  { name: 'Gain on Disposal', type: 'revenue', normalBalance: 'credit' },
+  { name: 'Loss on Disposal', type: 'expense', normalBalance: 'debit' },
 ]
 
 export function isDepreciationExpenseAccount(accountName: string): boolean {
@@ -178,4 +179,132 @@ export function addAccountManual(accountName: string, accountType: AccountType, 
   if (!ACCOUNTS.some(a => a.name === accountName)) {
     ACCOUNTS.push({ name: accountName, type: accountType, normalBalance: normalBalance })
   }
+}
+
+// ─── Equipment Management Types ───────────────────────────────────────────────
+
+export type DepreciationMethod = 'SL' | 'DDB' | 'SYD' | 'Section179'
+export type AssetStatus = 'Active' | 'Sold' | 'Retired'
+export type AssetCategory =
+  | 'Machinery'
+  | 'Vehicles'
+  | 'Computers & Technology'
+  | 'Furniture & Fixtures'
+  | 'Buildings & Improvements'
+  | 'Other'
+
+export type ReminderType =
+  | 'warranty_expiration'
+  | 'scheduled_maintenance'
+  | 'insurance_renewal'
+  | 'loan_payment_due'
+
+export type AuditAction =
+  | 'created'
+  | 'method_changed'
+  | 'status_changed'
+  | 'depreciation_rejected'
+  | 'field_updated'
+
+export interface EquipmentAsset {
+  id: string
+  userId: string
+  name: string
+  specificName: string
+  category: AssetCategory
+  description: string | null
+  account: string
+  cost: number
+  salvageValue: number
+  usefulLifeYears: number
+  depreciationMethod: DepreciationMethod
+  purchaseDate: string
+  lastDepreciatedDate: string | null
+  status: AssetStatus
+  saleDate: string | null
+  salePrice: number | null
+  gainLoss: number | null
+  associatedJournalEntryId: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export interface DepreciationRow {
+  year: number
+  calendarYear: number
+  annualDepreciation: number
+  accumulatedDepreciation: number
+  bookValue: number
+}
+
+export interface EquipmentReminder {
+  id: string
+  assetId: string
+  userId: string
+  type: ReminderType
+  targetDate: string
+  notes: string | null
+  isDismissed: boolean
+  createdAt: string
+}
+
+export interface EquipmentAuditLogEntry {
+  id: string
+  assetId: string
+  userId: string
+  action: AuditAction
+  previousValue: string | null
+  newValue: string | null
+  createdAt: string
+}
+
+export interface CreateEquipmentAssetPayload {
+  name: string
+  specificName: string
+  category: AssetCategory
+  description?: string
+  purchaseDate: string
+  cost: number
+  salvageValue: number
+  usefulLifeYears: number
+  depreciationMethod: DepreciationMethod
+  paymentMethod: 'cash' | 'credit'
+}
+
+export interface DisposalPayload {
+  disposalType: 'Sold' | 'Retired'
+  saleDate: string
+  salePrice?: number
+}
+
+export interface ParsedEquipmentAsset {
+  assetName: string
+  category: string | null
+  purchaseDate: string | null
+  cost: number | null
+  usefulLifeYears: number | null
+  depreciationMethodHint: 'SL' | 'DDB' | 'SYD' | 'Section179' | null
+  salvageValue: number | null
+  confidence: number
+  messageToUser: string | null
+  remaining: number
+  resetAt: string
+}
+
+export interface PendingDepreciationBatch {
+  entries: Array<{
+    assetId: string
+    assetName: string
+    monthlyAmount: number
+    debitAccount: string
+    creditAccount: string
+    date: string
+  }>
+}
+
+export interface ReminderPayload {
+  type: ReminderType
+  targetDate: string
+  notes?: string
 }

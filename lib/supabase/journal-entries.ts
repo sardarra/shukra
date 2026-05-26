@@ -34,6 +34,7 @@ type JournalRow = {
   credit_account: string | null
   credit_amount: number | null
   user_id: string | null
+  associated_plant_asset_id?: string | null
 }
 
 function rowToJournalEntry(row: JournalRow): JournalEntry {
@@ -101,7 +102,7 @@ export async function addJournalEntryToSupabase(
       inserted?.id != null
     ) {
       const purchaseDate = parsed.data.date ?? createdAt.split('T')[0]!
-      await createPlantAssetFromPurchase({
+      const createdAsset = await createPlantAssetFromPurchase({
         userId: user.id,
         journalEntryId: String(inserted.id),
         specificName,
@@ -110,6 +111,19 @@ export async function addJournalEntryToSupabase(
         purchaseDate,
         description: parsed.data.description,
       })
+
+      // Best-effort: link journal entry -> plant asset via the new column, if present.
+      if (createdAsset.ok && createdAsset.plantAssetId) {
+        const { error: linkError } = await supabase
+          .from('journalEntries')
+          .update({ associated_plant_asset_id: createdAsset.plantAssetId })
+          .eq('id', inserted.id)
+          .eq('user_id', user.id)
+        if (linkError) {
+          // Column may not exist in some environments; don't block the entry.
+          console.warn('Could not link journal entry to plant asset:', linkError)
+        }
+      }
     }
 
     return { ok: true, error: null }
@@ -179,7 +193,35 @@ export async function deleteJournalEntryFromSupabase(
       return { ok: false, error: 'Unauthorized' }
     }
 
-    await deletePlantAssetsByJournalEntryId(user.id, dbId)
+    // Prefer new linkage: journalEntries.associated_plant_asset_id
+    const { data: linked, error: linkedError } = await supabase
+      .from('journalEntries')
+      .select('associated_plant_asset_id')
+      .eq('id', dbId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (linkedError) {
+      // If schema isn't migrated yet, fall back to old linkage.
+      console.warn('Could not fetch associated_plant_asset_id:', linkedError)
+    }
+
+    const linkedPlantAssetId =
+      (linked as { associated_plant_asset_id?: string | null } | null)?.associated_plant_asset_id ??
+      null
+
+    if (linkedPlantAssetId) {
+      const { error: plantDeleteError } = await supabase
+        .from('plantAssets')
+        .delete()
+        .eq('id', linkedPlantAssetId)
+        .eq('user_id', user.id)
+      if (plantDeleteError) {
+        console.error('Failed deleting linked plant asset:', plantDeleteError)
+      }
+    } else {
+      await deletePlantAssetsByJournalEntryId(user.id, dbId)
+    }
 
     const { error } = await supabase
       .from('journalEntries')

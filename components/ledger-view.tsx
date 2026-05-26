@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCurrency } from '@/lib/accounting-store'
-import { Empty } from '@/components/ui/empty'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Badge } from '@/components/ui/badge'
 import type { AccountType } from '@/lib/accounting-types'
 
@@ -21,6 +21,7 @@ const accountTypeBadgeVariant: Record<AccountType, 'default' | 'secondary' | 'ou
   equity: 'outline',
   revenue: 'default',
   expense: 'destructive',
+  plant: 'default',
 }
 
 const accountTypeLabel: Record<AccountType, string> = {
@@ -29,6 +30,7 @@ const accountTypeLabel: Record<AccountType, string> = {
   equity: 'Equity',
   revenue: 'Revenue',
   expense: 'Expense',
+  plant: 'Plant',
 }
 
 export function LedgerView() {
@@ -38,10 +40,14 @@ export function LedgerView() {
 
   if (nonEmptyLedgers.length === 0) {
     return (
-      <Empty
-        title="No ledger accounts"
-        description="Record transactions from the Dashboard to see T-account ledgers here."
-      />
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyTitle>No ledger accounts</EmptyTitle>
+          <EmptyDescription>
+            Record transactions from the Dashboard to see T-account ledgers here.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 

@@ -30,6 +30,7 @@ function rowToPlantAsset(row: PlantAssetRow): PlantAsset {
     purchaseDate: row.purchase_date,
     lastDepreciatedDate: row.last_depreciated_date,
     createdAt: row.created_at,
+    associatedJournalEntry: row.journal_entry_id,
   }
 }
 
@@ -57,29 +58,36 @@ export async function createPlantAssetFromPurchase(params: {
   cost: number
   purchaseDate: string
   description: string
-}): Promise<void> {
+}): Promise<{ ok: boolean; plantAssetId: string | null; error: string | null }> {
   const supabase = await createSupabaseServerClient()
   const specificName = params.specificName.trim()
-  if (!specificName) return
+  if (!specificName) return { ok: false, plantAssetId: null, error: 'Missing specific name' }
 
-  const { error } = await supabase.from('plantAssets').upsert(
-    {
-      user_id: params.userId,
-      journal_entry_id: params.journalEntryId,
-      name: params.description,
-      specific_name: specificName,
-      account: params.account,
-      cost: params.cost,
-      salvage_value: 0,
-      useful_life_years: 5,
-      purchase_date: params.purchaseDate,
-    },
-    { onConflict: 'user_id,journal_entry_id' }
-  )
+  const { data, error } = await supabase
+    .from('plantAssets')
+    .upsert(
+      {
+        user_id: params.userId,
+        journal_entry_id: params.journalEntryId,
+        name: params.description,
+        specific_name: specificName,
+        account: params.account,
+        cost: params.cost,
+        salvage_value: 0,
+        useful_life_years: 5,
+        purchase_date: params.purchaseDate,
+      },
+      { onConflict: 'user_id,journal_entry_id' }
+    )
+    .select('id')
+    .single()
 
   if (error) {
     console.error('Failed creating plantAsset from purchase:', error)
+    return { ok: false, plantAssetId: null, error: 'Failed creating plant asset' }
   }
+
+  return { ok: true, plantAssetId: (data as { id?: string } | null)?.id ?? null, error: null }
 }
 
 /** Create plant asset rows for equipment purchases not yet tracked. */
@@ -165,6 +173,50 @@ export async function pruneOrphanedPlantAssets(
       }
     }
   }
+}
+
+/**
+ * Delete a plant asset. When linked to a journal entry, deletes that entry too
+ * (journal delete already removes the plant asset row).
+ */
+export async function deletePlantAssetForUser(
+  userId: string,
+  plantAssetId: string
+): Promise<{ ok: boolean; error: string | null }> {
+  const supabase = await createSupabaseServerClient()
+  const { data: row, error } = await supabase
+    .from('plantAssets')
+    .select('journal_entry_id')
+    .eq('id', plantAssetId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed loading plantAsset for delete:', error)
+    return { ok: false, error: 'Failed to load equipment record' }
+  }
+
+  if (!row) {
+    return { ok: false, error: 'Equipment not found' }
+  }
+
+  if (row.journal_entry_id) {
+    const { deleteJournalEntryFromSupabase } = await import('@/lib/supabase/journal-entries')
+    return deleteJournalEntryFromSupabase(`db:${row.journal_entry_id}`)
+  }
+
+  const { error: deleteError } = await supabase
+    .from('plantAssets')
+    .delete()
+    .eq('id', plantAssetId)
+    .eq('user_id', userId)
+
+  if (deleteError) {
+    console.error('Failed deleting plantAsset:', deleteError)
+    return { ok: false, error: 'Failed to delete equipment' }
+  }
+
+  return { ok: true, error: null }
 }
 
 export async function markPlantAssetDepreciated(

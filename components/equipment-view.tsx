@@ -11,26 +11,25 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/accounting-store'
+import { plantAssetLabel } from '@/lib/depreciation'
 import { Trash2 } from 'lucide-react'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 
-export function JournalTable() {
-  const { journalEntries, deleteEntry } = useAccounting()
+export function EquipmentView() {
+  const { plantAssets, deletePlantAsset } = useAccounting()
 
-  // Sort by date, then by creation time
-  const sortedEntries = [...journalEntries].sort((a, b) => {
-    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime()
-    if (dateCompare !== 0) return dateCompare
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  })
+  const sortedAssets = [...plantAssets].sort(
+    (a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()
+  )
 
-  if (journalEntries.length === 0) {
+  if (plantAssets.length === 0) {
     return (
       <Empty className="border border-dashed">
         <EmptyHeader>
-          <EmptyTitle>No journal entries</EmptyTitle>
+          <EmptyTitle>No equipment on record</EmptyTitle>
           <EmptyDescription>
-            Record your first transaction from the Dashboard to see entries here.
+            Record an equipment or prepaid equipment purchase from the Dashboard to see assets
+            here.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -42,44 +41,47 @@ export function JournalTable() {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="font-semibold">Date</TableHead>
-            <TableHead className="font-semibold">Description</TableHead>
-            <TableHead className="font-semibold">Debit Account</TableHead>
-            <TableHead className="font-semibold text-right">Debit Amount</TableHead>
-            <TableHead className="font-semibold">Credit Account</TableHead>
-            <TableHead className="font-semibold text-right">Credit Amount</TableHead>
+            <TableHead className="font-semibold">Asset</TableHead>
+            <TableHead className="font-semibold">Account</TableHead>
+            <TableHead className="font-semibold">Purchase date</TableHead>
+            <TableHead className="font-semibold text-right">Cost</TableHead>
+            <TableHead className="font-semibold text-right">Salvage</TableHead>
+            <TableHead className="font-semibold text-right">Useful life</TableHead>
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedEntries.map((entry) => (
-            <TableRow key={entry.id} className="group">
+          {sortedAssets.map((asset) => (
+            <TableRow key={asset.id} className="group">
+              <TableCell className="font-medium max-w-[200px] truncate">
+                {plantAssetLabel(asset)}
+              </TableCell>
+              <TableCell>{asset.account}</TableCell>
               <TableCell className="font-mono text-sm">
-                {new Date(entry.date).toLocaleDateString('en-US', {
+                {new Date(asset.purchaseDate).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
+                  year: 'numeric',
                 })}
               </TableCell>
-              <TableCell className="max-w-[200px] truncate">
-                {entry.description}
-              </TableCell>
-              <TableCell className="font-medium">{entry.debitAccount}</TableCell>
               <TableCell className="text-right font-mono">
-                {formatCurrency(entry.debitAmount)}
+                {formatCurrency(asset.cost)}
               </TableCell>
-              <TableCell className="font-medium">{entry.creditAccount}</TableCell>
               <TableCell className="text-right font-mono">
-                {formatCurrency(entry.creditAmount)}
+                {formatCurrency(asset.salvageValue)}
+              </TableCell>
+              <TableCell className="text-right font-mono">
+                {asset.usefulLifeYears} yr
               </TableCell>
               <TableCell>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteEntry(entry.id)}
+                  onClick={() => void deletePlantAsset(asset.id)}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Delete entry</span>
+                  <span className="sr-only">Delete equipment</span>
                 </Button>
               </TableCell>
             </TableRow>

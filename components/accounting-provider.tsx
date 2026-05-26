@@ -60,6 +60,7 @@ interface AccountingContextType extends AccountingState {
   confirmEntry: () => void
   cancelEntry: () => void
   deleteEntry: (id: string) => void | Promise<void>
+  deletePlantAsset: (plantAssetId: string) => void | Promise<void>
   answerClarification: (answer: string) => Promise<void>
   addManualEntry: (entry: ParsedTransaction) => void
 }
@@ -259,12 +260,13 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
       // Strip quota fields before treating as ParsedTransaction
       const { remaining: _r, resetAt: _ra, ...parsed } = data
 
-      const clarification = resolveClarificationQuestion(parsed as ParsedTransaction)
+      const parsedTx = parsed as unknown as ParsedTransaction
+      const clarification = resolveClarificationQuestion(parsedTx)
       if (clarification) {
         setClarificationQuestion(clarification)
       }
 
-      setPendingEntry({ parsed: parsed as ParsedTransaction, originalInput: input })
+      setPendingEntry({ parsed: parsedTx, originalInput: input })
     } catch {
       setError('Failed to parse transaction. Please try again.')
     } finally {
@@ -295,6 +297,15 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     setClarificationQuestion(null)
   }, [])
 
+
+    /**
+   * 
+   * What should happen when a user deletes the journal entry corresponding to a plant asset:
+   * - journal entry table in supabase now holds a associated_plant_asset_id column
+   * - when the journal entry is deleted, so should the plant asset associated. 
+   */
+
+    
   const deleteEntry = useCallback(async (id: string) => {
     const dbKey = id.startsWith('db:') ? id.slice(3) : /^\d+$/.test(id) ? id : null
 
@@ -325,6 +336,34 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
       setError('Failed to delete journal entry.')
     }
   }, [])
+
+  const deletePlantAsset = useCallback(async (plantAssetId: string) => {
+    try {
+      const response = await fetch(
+        `/api/plant-assets?id=${encodeURIComponent(plantAssetId)}`,
+        { method: 'DELETE' }
+      )
+      const data = (await response.json().catch(() => ({}))) as {
+        entries?: JournalEntry[]
+        plantAssets?: PlantAsset[]
+        error?: string
+      }
+
+      if (!response.ok) {
+        setError(data.error ?? 'Failed to delete equipment.')
+        return
+      }
+
+      setError(null)
+      setJournalEntries(Array.isArray(data.entries) ? data.entries : [])
+      setPlantAssets(Array.isArray(data.plantAssets) ? data.plantAssets : [])
+    } catch {
+      setError('Failed to delete equipment.')
+    }
+  }, [])
+
+
+
 
   const answerClarification = useCallback(async (answer: string) => {
     if (!pendingEntry) return
@@ -360,6 +399,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     confirmEntry,
     cancelEntry,
     deleteEntry,
+    deletePlantAsset,
     answerClarification,
     addManualEntry,
   }

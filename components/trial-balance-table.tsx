@@ -11,7 +11,7 @@ import {
   TableFooter,
 } from '@/components/ui/table'
 import { formatCurrency } from '@/lib/accounting-store'
-import { Empty } from '@/components/ui/empty'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Card, CardContent } from '@/components/ui/card'
 import { Check, AlertTriangle } from 'lucide-react'
 
@@ -24,10 +24,14 @@ export function TrialBalanceTable() {
 
   if (trialBalance.length === 0) {
     return (
-      <Empty
-        title="No trial balance data"
-        description="Record transactions from the Dashboard to generate a trial balance."
-      />
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyTitle>No trial balance data</EmptyTitle>
+          <EmptyDescription>
+            Record transactions from the Dashboard to generate a trial balance.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 

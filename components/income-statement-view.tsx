@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCurrency } from '@/lib/accounting-store'
-import { Empty } from '@/components/ui/empty'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
@@ -21,10 +21,15 @@ export function IncomeStatementView() {
 
   if (!hasData) {
     return (
-      <Empty
-        title="No income statement data"
-        description="Record revenue and expense transactions from the Dashboard to generate an income statement."
-      />
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyTitle>No income statement data</EmptyTitle>
+          <EmptyDescription>
+            Record revenue and expense transactions from the Dashboard to generate an income
+            statement.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 
