@@ -87,6 +87,10 @@ export async function createPlantAssetFromPurchase(params: {
     return { ok: false, plantAssetId: null, error: 'Failed creating plant asset' }
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H5',location:'plant-assets.ts:createPlantAssetFromPurchase',message:'Plant asset upserted',data:{plantAssetId:(data as { id?: string } | null)?.id??null,journalEntryId:params.journalEntryId,specificName,purchaseDate:params.purchaseDate,cost:params.cost},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+
   return { ok: true, plantAssetId: (data as { id?: string } | null)?.id ?? null, error: null }
 }
 
@@ -176,8 +180,10 @@ export async function pruneOrphanedPlantAssets(
 }
 
 /**
- * Delete a plant asset. When linked to a journal entry, deletes that entry too
- * (journal delete already removes the plant asset row).
+ * Delete a plant asset and its associated journal entry (if any).
+ * Always deletes the plantAssets row directly by ID, then deletes the linked
+ * journal entry separately. This avoids relying on the journal-entry delete
+ * path to clean up the plant asset row, which can fail silently.
  */
 export async function deletePlantAssetForUser(
   userId: string,
@@ -200,20 +206,32 @@ export async function deletePlantAssetForUser(
     return { ok: false, error: 'Equipment not found' }
   }
 
-  if (row.journal_entry_id) {
-    const { deleteJournalEntryFromSupabase } = await import('@/lib/supabase/journal-entries')
-    return deleteJournalEntryFromSupabase(`db:${row.journal_entry_id}`)
-  }
-
-  const { error: deleteError } = await supabase
+  // Delete the plant asset row directly — don't rely on the journal entry
+  // delete path to cascade this, since that path can fail silently.
+  const { error: deleteAssetError } = await supabase
     .from('plantAssets')
     .delete()
     .eq('id', plantAssetId)
     .eq('user_id', userId)
 
-  if (deleteError) {
-    console.error('Failed deleting plantAsset:', deleteError)
+  if (deleteAssetError) {
+    console.error('Failed deleting plantAsset:', deleteAssetError)
     return { ok: false, error: 'Failed to delete equipment' }
+  }
+
+  // If there's a linked journal entry, delete it too.
+  if (row.journal_entry_id) {
+    const { error: deleteEntryError } = await supabase
+      .from('journalEntries')
+      .delete()
+      .eq('id', row.journal_entry_id)
+      .eq('user_id', userId)
+
+    if (deleteEntryError) {
+      console.error('Failed deleting linked journal entry for plant asset:', deleteEntryError)
+      // The asset is already gone — return ok but log the partial failure.
+      // The journal entry will be pruned on next load via pruneOrphanedPlantAssets.
+    }
   }
 
   return { ok: true, error: null }

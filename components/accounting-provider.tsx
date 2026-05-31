@@ -183,6 +183,9 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
   const persistEntry = useCallback(
     async (entry: JournalEntry, options?: { plantAssetSpecificName?: string | null }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H1',location:'accounting-provider.tsx:persistEntry',message:'persistEntry POST starting',data:{localEntryId:entry.id,description:entry.description,debitAccount:entry.debitAccount,debitAmount:entry.debitAmount,plantAssetSpecificName:options?.plantAssetSpecificName??null,date:entry.date},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       try {
         const response = await fetch('/api/journal-entries', {
           method: 'POST',
@@ -219,9 +222,11 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
   )
 
   const parseTransaction = useCallback(async (input: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H2',location:'accounting-provider.tsx:parseTransaction:start',message:'parseTransaction started',data:{inputPreview:input.slice(0,120),hasClarificationSuffix:input.includes('Clarification:')},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     setIsLoading(true)
     setError(null)
-    setClarificationQuestion(null)
 
     try {
       const response = await fetch('/api/parse-transaction', {
@@ -262,11 +267,12 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
       const parsedTx = parsed as unknown as ParsedTransaction
       const clarification = resolveClarificationQuestion(parsedTx)
-      if (clarification) {
-        setClarificationQuestion(clarification)
-      }
+      setClarificationQuestion(clarification)
 
       setPendingEntry({ parsed: parsedTx, originalInput: input })
+      // #region agent log
+      fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H2',location:'accounting-provider.tsx:parseTransaction:done',message:'parseTransaction finished',data:{hasClarification:!!clarification,plantAssetSpecificName:parsedTx.plantAssetSpecificName??null,plantAssetDetailsComplete:parsedTx.plantAssetDetailsComplete??null,confidence:parsedTx.confidence,debitAccount:parsedTx.debitAccount,debitAmount:parsedTx.debitAmount,date:parsedTx.date??null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
     } catch {
       setError('Failed to parse transaction. Please try again.')
     } finally {
@@ -275,7 +281,24 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const confirmEntry = useCallback(() => {
-    if (!pendingEntry) return
+    if (!pendingEntry || isLoading) {
+      // #region agent log
+      fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'post-fix',hypothesisId:'H1',location:'accounting-provider.tsx:confirmEntry:blocked',message:'confirmEntry blocked',data:{hasPending:!!pendingEntry,isLoading,reason:!pendingEntry?'no-pending':'loading'},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      return
+    }
+
+    const unresolvedClarification = resolveClarificationQuestion(pendingEntry.parsed)
+    if (unresolvedClarification) {
+      // #region agent log
+      fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'post-fix',hypothesisId:'H1',location:'accounting-provider.tsx:confirmEntry:blocked',message:'confirmEntry blocked',data:{hasPending:true,isLoading:false,reason:'unresolved-clarification'},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      return
+    }
+
+    // #region agent log
+    fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'post-fix',hypothesisId:'H1',location:'accounting-provider.tsx:confirmEntry',message:'confirmEntry invoked',data:{hasPending:!!pendingEntry,plantAssetSpecificName:pendingEntry?.parsed.plantAssetSpecificName??null,debitAmount:pendingEntry?.parsed.debitAmount??null,date:pendingEntry?.parsed.date??null,confidence:pendingEntry?.parsed.confidence??null,clarificationQuestionActive:!!clarificationQuestion,isLoading},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     const newEntry: JournalEntry = {
       id: generateId(),
@@ -289,7 +312,7 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
     })
     setPendingEntry(null)
     setClarificationQuestion(null)
-  }, [pendingEntry, persistEntry])
+  }, [pendingEntry, persistEntry, clarificationQuestion, isLoading])
 
   const cancelEntry = useCallback(() => {
     setPendingEntry(null)
@@ -366,6 +389,9 @@ export function AccountingProvider({ children }: { children: ReactNode }) {
 
 
   const answerClarification = useCallback(async (answer: string) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H3',location:'accounting-provider.tsx:answerClarification',message:'answerClarification invoked',data:{answerPreview:answer.slice(0,80),pendingPlantName:pendingEntry?.parsed.plantAssetSpecificName??null,pendingDebitAmount:pendingEntry?.parsed.debitAmount??null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     if (!pendingEntry) return
     
     // Re-parse with the clarification included
