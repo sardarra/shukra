@@ -6,17 +6,17 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
 
 ## Tasks
 
-- [-] 1. Data layer — types, schema, and Supabase helpers
-  - [-] 1.1 Extend `lib/accounting-types.ts` with product types
+- [x] 1. Data layer — types, schema, and Supabase helpers
+  - [x] 1.1 Extend `lib/accounting-types.ts` with product types
     - Add `ProductType`, `CostType`, and `ViabilityStatus` union types
     - Add `Product`, `CostItem`, `ProductWithCostItems`, `ProductMetrics`, `ProductSummary`, `CreateProductPayload`, and `CreateCostItemPayload` interfaces
     - _Requirements: 1.1, 2.1, 3.1, 5.1, 7.1_
 
-  - [-] 1.2 Create Supabase migration SQL file
+  - [x] 1.2 Create Supabase migration SQL file
     - Write `supabase/migrations/YYYYMMDD_product_manager.sql` creating `products` and `product_cost_items` tables with all columns, constraints (`char_length`, `selling_price > 0`, `amount >= 0`, `product_type` and `cost_type` CHECK constraints), foreign key with `ON DELETE CASCADE`, and RLS policies as specified in the design
     - _Requirements: 1.4, 7.1, 7.3_
 
-  - [ ] 1.3 Create `lib/supabase/products.ts` client helpers
+  - [x] 1.3 Create `lib/supabase/products.ts` client helpers
     - Implement `fetchProductsWithCostItems(supabase)` — SELECT all `products` rows for authenticated user joined with their `product_cost_items`, ordered by `created_at` DESC, mapping snake_case columns to camelCase `ProductWithCostItems`
     - Implement `insertProduct(supabase, payload)` — INSERT into `products` and return the new row
     - Implement `updateProduct(supabase, id, patch)` — PATCH mutable fields (`name`, `description`, `product_type`, `selling_price`) and return updated row; always refresh `updated_at`
@@ -26,8 +26,8 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Implement `deleteCostItem(supabase, itemId)` — DELETE the cost item row
     - _Requirements: 1.4, 2.1, 7.1, 7.2, 7.3_
 
-- [ ] 2. Pure calculation functions — `lib/products.ts`
-  - [ ] 2.1 Implement `computeContributionMargin` and `computeContributionMarginRatio`
+- [-] 2. Pure calculation functions — `lib/products.ts`
+  - [-] 2.1 Implement `computeContributionMargin` and `computeContributionMarginRatio`
     - `computeContributionMargin(sellingPrice, costItems)` — returns `sellingPrice` minus the sum of all `costItems` where `costType === 'Variable'`; fixed cost items must not affect the result
     - `computeContributionMarginRatio(cm, sellingPrice)` — returns `round((cm / sellingPrice) * 100, 2)`; returns `0` defensively when `sellingPrice` is `0`
     - _Requirements: 3.1, 3.2_
@@ -37,7 +37,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - **Property 2: Contribution Margin Ratio Formula** — `computeContributionMarginRatio` equals `round((cm / sellingPrice) * 100, 2)` for any positive selling price
     - **Validates: Requirements 3.1, 3.2**
 
-  - [ ] 2.3 Implement `computeBreakEvenUnits` and `computeViabilityStatus`
+  - [-] 2.3 Implement `computeBreakEvenUnits` and `computeViabilityStatus`
     - `computeBreakEvenUnits(costItems, cm)` — returns `Math.ceil(sum(fixedCosts) / cm)` when fixed costs exist and `cm > 0`; returns `'N/A'` when no fixed cost items; returns `'Cannot break even'` when `cm <= 0`
     - `computeViabilityStatus(cm)` — returns `'Profitable'` when `cm > 0`, `'Break-Even'` when `cm === 0`, `'Unprofitable'` when `cm < 0`
     - _Requirements: 4.1, 4.3, 4.4, 5.1_

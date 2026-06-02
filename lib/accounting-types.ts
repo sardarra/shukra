@@ -308,3 +308,61 @@ export interface ReminderPayload {
   targetDate: string
   notes?: string
 }
+
+// ─── Product Manager Types ─────────────────────────────────────────────────────
+
+export type ProductType = 'Physical Good' | 'Service'
+export type CostType = 'Variable' | 'Fixed'
+export type ViabilityStatus = 'Profitable' | 'Break-Even' | 'Unprofitable'
+
+export interface Product {
+  id: string
+  userId: string
+  name: string
+  productType: ProductType
+  description: string | null
+  sellingPrice: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CostItem {
+  id: string
+  productId: string
+  userId: string
+  label: string
+  costType: CostType
+  amount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProductWithCostItems extends Product {
+  costItems: CostItem[]
+}
+
+export interface ProductMetrics {
+  contributionMargin: number
+  contributionMarginRatio: number
+  breakEvenUnits: number | 'N/A' | 'Cannot break even'
+  viabilityStatus: ViabilityStatus
+}
+
+export interface ProductSummary {
+  profitable: number
+  breakEven: number
+  unprofitable: number
+}
+
+export interface CreateProductPayload {
+  name: string
+  productType: ProductType
+  description?: string
+  sellingPrice: number
+}
+
+export interface CreateCostItemPayload {
+  label: string
+  costType: CostType
+  amount: number
+}
