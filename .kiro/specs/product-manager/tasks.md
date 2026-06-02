@@ -26,28 +26,28 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Implement `deleteCostItem(supabase, itemId)` — DELETE the cost item row
     - _Requirements: 1.4, 2.1, 7.1, 7.2, 7.3_
 
-- [-] 2. Pure calculation functions — `lib/products.ts`
-  - [-] 2.1 Implement `computeContributionMargin` and `computeContributionMarginRatio`
+- [x] 2. Pure calculation functions — `lib/products.ts`
+  - [x] 2.1 Implement `computeContributionMargin` and `computeContributionMarginRatio`
     - `computeContributionMargin(sellingPrice, costItems)` — returns `sellingPrice` minus the sum of all `costItems` where `costType === 'Variable'`; fixed cost items must not affect the result
     - `computeContributionMarginRatio(cm, sellingPrice)` — returns `round((cm / sellingPrice) * 100, 2)`; returns `0` defensively when `sellingPrice` is `0`
     - _Requirements: 3.1, 3.2_
 
-  - [ ]* 2.2 Write property tests for CM and CM ratio — `lib/__tests__/products.property.test.ts`
+  - [ ] 2.2 Write property tests for CM and CM ratio — `lib/__tests__/products.property.test.ts`
     - **Property 1: Contribution Margin Formula** — `computeContributionMargin` equals `sellingPrice` minus sum of variable cost items; fixed items do not affect the result
     - **Property 2: Contribution Margin Ratio Formula** — `computeContributionMarginRatio` equals `round((cm / sellingPrice) * 100, 2)` for any positive selling price
     - **Validates: Requirements 3.1, 3.2**
 
-  - [-] 2.3 Implement `computeBreakEvenUnits` and `computeViabilityStatus`
+  - [x] 2.3 Implement `computeBreakEvenUnits` and `computeViabilityStatus`
     - `computeBreakEvenUnits(costItems, cm)` — returns `Math.ceil(sum(fixedCosts) / cm)` when fixed costs exist and `cm > 0`; returns `'N/A'` when no fixed cost items; returns `'Cannot break even'` when `cm <= 0`
     - `computeViabilityStatus(cm)` — returns `'Profitable'` when `cm > 0`, `'Break-Even'` when `cm === 0`, `'Unprofitable'` when `cm < 0`
     - _Requirements: 4.1, 4.3, 4.4, 5.1_
 
-  - [ ]* 2.4 Write property tests for break-even and viability — `lib/__tests__/products.property.test.ts`
+  - [ ] 2.4 Write property tests for break-even and viability — `lib/__tests__/products.property.test.ts`
     - **Property 4: Viability Status Classification** — `computeViabilityStatus` returns the correct status for any CM value
     - **Property 9: Break-Even Units Formula** — `computeBreakEvenUnits` equals `Math.ceil(sum(fixedCosts) / cm)` for any product with fixed costs and positive CM
     - **Validates: Requirements 4.1, 5.1**
 
-  - [ ] 2.5 Implement `computeProductMetrics`, `computeProductSummary`, `validateProduct`, `validateCostItem`, and `filterProducts`
+  - [x] 2.5 Implement `computeProductMetrics`, `computeProductSummary`, `validateProduct`, `validateCostItem`, and `filterProducts`
     - `computeProductMetrics(product)` — calls the four calculation functions and returns a `ProductMetrics` object; all derived values must be internally consistent
     - `computeProductSummary(products)` — returns counts of Profitable, Break-Even, and Unprofitable products; `profitable + breakEven + unprofitable` must equal `products.length`
     - `validateProduct(payload)` — returns a `Record<string, string>` of field-level errors; rejects empty/oversized name, missing product type, and selling price ≤ 0
