@@ -32,7 +32,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - `computeContributionMarginRatio(cm, sellingPrice)` — returns `round((cm / sellingPrice) * 100, 2)`; returns `0` defensively when `sellingPrice` is `0`
     - _Requirements: 3.1, 3.2_
 
-  - [ ] 2.2 Write property tests for CM and CM ratio — `lib/__tests__/products.property.test.ts`
+  - [x] 2.2 Write property tests for CM and CM ratio — `lib/__tests__/products.property.test.ts`
     - **Property 1: Contribution Margin Formula** — `computeContributionMargin` equals `sellingPrice` minus sum of variable cost items; fixed items do not affect the result
     - **Property 2: Contribution Margin Ratio Formula** — `computeContributionMarginRatio` equals `round((cm / sellingPrice) * 100, 2)` for any positive selling price
     - **Validates: Requirements 3.1, 3.2**
@@ -42,7 +42,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - `computeViabilityStatus(cm)` — returns `'Profitable'` when `cm > 0`, `'Break-Even'` when `cm === 0`, `'Unprofitable'` when `cm < 0`
     - _Requirements: 4.1, 4.3, 4.4, 5.1_
 
-  - [ ] 2.4 Write property tests for break-even and viability — `lib/__tests__/products.property.test.ts`
+  - [x] 2.4 Write property tests for break-even and viability — `lib/__tests__/products.property.test.ts`
     - **Property 4: Viability Status Classification** — `computeViabilityStatus` returns the correct status for any CM value
     - **Property 9: Break-Even Units Formula** — `computeBreakEvenUnits` equals `Math.ceil(sum(fixedCosts) / cm)` for any product with fixed costs and positive CM
     - **Validates: Requirements 4.1, 5.1**
@@ -55,7 +55,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - `filterProducts(products, searchTerm, viabilityFilter, typeFilter)` — case-insensitive name/description search; viability and type filters; returns all products when all filters are `'All'` and search term is blank
     - _Requirements: 1.5, 2.5, 3.5, 5.4, 6.3, 6.4, 6.5_
 
-  - [ ]* 2.6 Write property tests for metrics consistency, validation, summary, and filter — `lib/__tests__/products.property.test.ts` and `lib/__tests__/products-filter.property.test.ts`
+  - [x] 2.6 Write property tests for metrics consistency, validation, summary, and filter — `lib/__tests__/products.property.test.ts` and `lib/__tests__/products-filter.property.test.ts`
     - **Property 3: Derived Metrics Consistency** — `computeProductMetrics` returns values consistent with each other for any product
     - **Property 5: Product Validation Rejects Invalid Inputs** — `validateProduct` returns a non-empty errors object for any payload with an invalid field
     - **Property 6: Cost Item Validation Rejects Invalid Inputs** — `validateCostItem` returns a non-empty errors object for any payload with an invalid field
