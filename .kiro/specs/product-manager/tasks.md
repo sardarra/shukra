@@ -63,7 +63,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - **Property 8: Summary Counts Match Product List** — `profitable + breakEven + unprofitable === products.length` for any list
     - **Validates: Requirements 1.5, 2.3, 2.4, 2.5, 3.4, 3.5, 5.4, 6.3, 6.4, 6.5**
 
-- [ ] 3. Checkpoint — ensure all calculation function tests pass
+- [x] 3. Checkpoint — ensure all calculation function tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. API routes — product and cost item CRUD
