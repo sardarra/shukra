@@ -67,12 +67,12 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. API routes — product and cost item CRUD
-  - [ ] 4.1 Create `app/api/products/route.ts` (GET + POST)
+  - [x] 4.1 Create `app/api/products/route.ts` (GET + POST)
     - GET: authenticate via `createSupabaseServerClient`, call `fetchProductsWithCostItems`, return `{ ok: true, products }` or error shape
     - POST: authenticate, validate body with Zod against `CreateProductPayload` (name max 150 chars, productType enum, sellingPrice > 0), call `insertProduct`, return `{ ok: true, product }` or 400/401/500 error shape
     - _Requirements: 1.1, 7.1, 7.2_
 
-  - [ ] 4.2 Create `app/api/products/[id]/route.ts` (PATCH + DELETE)
+  - [x] 4.2 Create `app/api/products/[id]/route.ts` (PATCH + DELETE)
     - PATCH: authenticate, validate ownership (return 403 if product belongs to different user), validate body, call `updateProduct`, return updated product
     - DELETE: authenticate, validate ownership, call `deleteProduct` (cascade removes cost items at DB level), return `{ ok: true }`
     - Return 404 when product not found; 403 when product belongs to different user
