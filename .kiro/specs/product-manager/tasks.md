@@ -105,13 +105,13 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - _Requirements: 1.7, 7.4, 7.5_
 
 - [-] 6. UI components — bottom-up
-  - [-] 6.1 Create `components/products/viability-badge.tsx`
+  - [x] 6.1 Create `components/products/viability-badge.tsx`
     - Render a color-coded badge: green background for `'Profitable'`, yellow for `'Break-Even'`, red for `'Unprofitable'`
     - Include a visible text label alongside color — color must not be the sole indicator of status (WCAG 2.1 AA)
     - Accept `status: ViabilityStatus` as a prop
     - _Requirements: 5.2, 5.3_
 
-  - [ ] 6.2 Create `components/products/product-summary-panel.tsx`
+  - [x] 6.2 Create `components/products/product-summary-panel.tsx`
     - Render 3 KPI cards: count of Profitable, Break-Even, and Unprofitable products
     - Consume `summary` from `ProductProvider`; display `"0"` for any category with no matching products
     - Updates within 500ms of any viability status change (driven by reactive context state)
@@ -121,13 +121,13 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - **Property 8: Summary Counts Match Product List** — `profitable + breakEven + unprofitable === products.length` for any list of products
     - **Validates: Requirements 5.4**
 
-  - [-] 6.4 Create `components/products/cost-item-form.tsx`
+  - [x] 6.4 Create `components/products/cost-item-form.tsx`
     - Inline form for adding or editing a cost item: label input (max 150 chars), cost type selector (Variable / Fixed), amount input (>= 0)
     - Use `react-hook-form` with inline field-level validation errors using `validateCostItem`
     - On submit, call `addCostItem` or `updateCostItem` from `ProductProvider`
     - _Requirements: 2.1, 2.5_
 
-  - [ ] 6.5 Create `components/products/cost-item-list.tsx`
+  - [-] 6.5 Create `components/products/cost-item-list.tsx`
     - Render cost items grouped by type (Variable / Fixed) with label, amount, edit button, and delete button per row
     - On delete, call `removeCostItem` from `ProductProvider`
     - Show computed totals: total variable costs, total fixed costs
