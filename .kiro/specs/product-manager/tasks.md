@@ -66,7 +66,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
 - [x] 3. Checkpoint — ensure all calculation function tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. API routes — product and cost item CRUD
+- [x] 4. API routes — product and cost item CRUD
   - [x] 4.1 Create `app/api/products/route.ts` (GET + POST)
     - GET: authenticate via `createSupabaseServerClient`, call `fetchProductsWithCostItems`, return `{ ok: true, products }` or error shape
     - POST: authenticate, validate body with Zod against `CreateProductPayload` (name max 150 chars, productType enum, sellingPrice > 0), call `insertProduct`, return `{ ok: true, product }` or 400/401/500 error shape
@@ -78,19 +78,19 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Return 404 when product not found; 403 when product belongs to different user
     - _Requirements: 1.3, 1.4, 7.3_
 
-  - [ ] 4.3 Create `app/api/products/[id]/cost-items/route.ts` (POST)
+  - [x] 4.3 Create `app/api/products/[id]/cost-items/route.ts` (POST)
     - POST: authenticate, validate ownership of parent product, validate body with Zod against `CreateCostItemPayload` (label non-empty max 150 chars, costType enum, amount >= 0), call `insertCostItem`, return `{ ok: true, costItem }`
     - If product insert succeeded but cost item insert fails, delete the product row (compensating transaction) and return 500
     - _Requirements: 2.1, 7.3_
 
-  - [ ] 4.4 Create `app/api/products/[id]/cost-items/[itemId]/route.ts` (PATCH + DELETE)
+  - [x] 4.4 Create `app/api/products/[id]/cost-items/[itemId]/route.ts` (PATCH + DELETE)
     - PATCH: authenticate, validate ownership, validate body, call `updateCostItem`, return updated cost item
     - DELETE: authenticate, validate ownership, call `deleteCostItem`, return `{ ok: true }`
     - Return 404 when cost item not found; 403 when cost item belongs to different user
     - _Requirements: 2.1, 2.3, 2.4, 7.3_
 
-- [ ] 5. `ProductProvider` React context
-  - [ ] 5.1 Create `components/products/product-provider.tsx`
+- [x] 5. `ProductProvider` React context
+  - [x] 5.1 Create `components/products/product-provider.tsx`
     - Implement `ProductProvider` with the full `ProductContextType` interface from the design: `products`, `isLoading`, `error`, `searchTerm`, `setSearchTerm`, `viabilityFilter`, `setViabilityFilter`, `typeFilter`, `setTypeFilter`, `filteredProducts`, `summary`, and all action methods
     - On mount (when user is authenticated), fetch products via `GET /api/products`; set `isLoading` during fetch; set `error` on failure; expose `retryLoad` to re-trigger the fetch
     - `filteredProducts` is a memoized derived value applying `searchTerm`, `viabilityFilter`, and `typeFilter` using `filterProducts` from `lib/products.ts`
@@ -98,14 +98,14 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Implement `createProduct`, `updateProduct`, `deleteProduct`, `addCostItem`, `updateCostItem`, `removeCostItem` calling the corresponding API routes and updating local state; surface toast notifications via `sonner` for network errors
     - _Requirements: 1.2, 1.3, 1.4, 1.7, 2.3, 2.4, 5.4, 6.3, 6.4, 6.5, 7.2, 7.4, 7.5, 7.6_
 
-  - [ ]* 5.2 Write unit tests for `ProductProvider` state transitions
+  - [x] 5.2 Write unit tests for `ProductProvider` state transitions
     - Mock `fetch`; verify state updates on `createProduct`, `updateProduct`, `deleteProduct`
     - Verify `filteredProducts` updates when `searchTerm` or `viabilityFilter` changes
     - Verify `error` is set on network failure and `retryLoad` clears it and re-fetches
     - _Requirements: 1.7, 7.4, 7.5_
 
-- [ ] 6. UI components — bottom-up
-  - [ ] 6.1 Create `components/products/viability-badge.tsx`
+- [-] 6. UI components — bottom-up
+  - [-] 6.1 Create `components/products/viability-badge.tsx`
     - Render a color-coded badge: green background for `'Profitable'`, yellow for `'Break-Even'`, red for `'Unprofitable'`
     - Include a visible text label alongside color — color must not be the sole indicator of status (WCAG 2.1 AA)
     - Accept `status: ViabilityStatus` as a prop
@@ -121,7 +121,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - **Property 8: Summary Counts Match Product List** — `profitable + breakEven + unprofitable === products.length` for any list of products
     - **Validates: Requirements 5.4**
 
-  - [ ] 6.4 Create `components/products/cost-item-form.tsx`
+  - [-] 6.4 Create `components/products/cost-item-form.tsx`
     - Inline form for adding or editing a cost item: label input (max 150 chars), cost type selector (Variable / Fixed), amount input (>= 0)
     - Use `react-hook-form` with inline field-level validation errors using `validateCostItem`
     - On submit, call `addCostItem` or `updateCostItem` from `ProductProvider`
