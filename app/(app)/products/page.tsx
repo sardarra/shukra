@@ -9,12 +9,51 @@
     - _Requirements: 1.2, 7.5, 7.6_
  */
 
-import ProductProvider from "@/components/product-provider";
+"use client";
+
+import { useState } from "react";
+import ProductProvider , { useProduct } from "@/components/product-provider";
+import { AddProductDialog } from "@/components/products/add-product-dialog";
+import { ProductList } from "@/components/products/product-list";
 import { ProductSummaryPanel } from "@/components/products/product-summary-panel";
 
-export default function ProductsPage() {
-  return <ProductProvider>
-    <ProductSummaryPanel />
+import { LoadingScreen } from "@/components/loading-screen";
 
-  </ProductProvider>
+import "./style.css";
+
+function ProductsPageContent() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { isLoading, error, retryLoad } = useProduct();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (error) {
+    return (
+      <p>{error}</p>
+    );
+  }
+  
+  return (
+    <ProductProvider>
+      <ProductSummaryPanel />
+      <ProductList />
+      <AddProductDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+    </ProductProvider>
+  );
+}
+
+export default function ProductsPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // TODO: Render a loading skeleton and block user interaction while `isLoading` is true
+  const isLoading = false;
+
+  return (
+    <ProductProvider>
+      
+      <ProductsPageContent />
+    </ProductProvider>
+  )
 }

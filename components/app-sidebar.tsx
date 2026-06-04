@@ -23,6 +23,7 @@ const navigation = [
   { name: 'Income Statement', href: '/income-statement', icon: TrendingUp },
   { name: 'Balance Sheet', href: '/balance-sheet', icon: PieChart },
   { name: 'Equipment', href: '/equipment', icon: Wrench },
+  { name: 'Products', href: '/products', icon: Wrench },
 ]
 
 export function AppSidebar() {

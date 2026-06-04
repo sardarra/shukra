@@ -2,6 +2,15 @@
  * GET: authenticate via createSupabaseServerClient, call fetchProductsWithCostItems, return { ok: true, products } or error shape
  * POST: authenticate, validate body with Zod against CreateProductPayload (name max 150 chars, productType enum, sellingPrice > 0), call insertProduct, return { ok: true, product } or 400/401/500 error shape
  * Requirements: 1.1, 7.1, 7.2
+ * 
+ * 
+ * Page assembly — wire everything together
+  - [ ] 8.1 Create `app/(app)/products/page.tsx`
+    - Wrap page content in `<ProductProvider>`
+    - Render `ProductSummaryPanel`, `ProductList`, and a floating "Add Product" button that opens `AddProductDialog`
+    - Render an alert banner when `ProductProvider.error` is non-null, with a "Retry" button that calls `retryLoad` (consistent with `AccountingProvider` pattern)
+    - Render a loading skeleton and block user interaction while `isLoading` is true
+    - _Requirements: 1.2, 7.5, 7.6_
  */
 
 
