@@ -146,13 +146,13 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - On confirm, call `createProduct` from `ProductProvider`
     - _Requirements: 1.1, 1.5_
 
-  - [ ] 6.8 Create `components/products/product-card.tsx`
+  - [x] 6.8 Create `components/products/product-card.tsx`
     - Render a single product card showing: name, product type, selling price, Contribution_Margin (currency, 2dp), Contribution_Margin_Ratio (percentage, 2dp), and `ViabilityBadge`
     - Inline edit and delete action buttons; delete calls `deleteProduct` from `ProductProvider`
     - Card is clickable to open `ProductDetailSheet`
     - _Requirements: 6.1_
 
-  - [ ] 6.9 Create `components/products/product-list.tsx`
+  - [x] 6.9 Create `components/products/product-list.tsx`
     - Render a responsive card grid of `ProductCard` components using `filteredProducts` from `ProductProvider`
     - Render filter controls: viability status multi-select, product type multi-select, and a search bar (case-insensitive, filters by name or description)
     - Display empty-state message when `filteredProducts` is empty (distinguishing "no products yet" from "no products match filters")
