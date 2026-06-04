@@ -18,7 +18,7 @@ interface ProductContextType {
     summary: ReturnType<typeof computeProductSummary>;
     retryLoad: () => void;
     createProduct: (data: { name: string; productType: ProductType; description?: string; sellingPrice: number }) => Promise<void>;
-    updateProduct: (id: string, data: Partial<{ name: string; productType: ProductType; description?: string; sellingPrice: number }>) => Promise<void>;
+    updateProduct: (id: string, data: Partial<{ name: string; productType: ProductType; description?: string | null; sellingPrice: number }>) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
     addCostItem: (productId: string, data: { label: string; costType: 'Variable' | 'Fixed'; amount: number }) => Promise<void>;
     updateCostItem: (productId: string, itemId: string, data: Partial<{ label: string; costType: 'Variable' | 'Fixed'; amount: number }>) => Promise<void>;
@@ -99,7 +99,7 @@ export default function ProductProvider({ children }: { children: React.ReactNod
     }
   }, [])
 
-  const updateProduct = useCallback(async (id: string, data: Partial<{ name: string; productType: ProductType; description?: string; sellingPrice: number }>) => {
+  const updateProduct = useCallback(async (id: string, data: Partial<{ name: string; productType: ProductType; description?: string | null; sellingPrice: number }>) => {
     try {
       const res = await fetch(`/api/products?id=${encodeURIComponent(id)}`, {
         method: 'PATCH',
