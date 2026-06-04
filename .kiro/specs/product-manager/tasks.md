@@ -133,13 +133,13 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Show computed totals: total variable costs, total fixed costs
     - _Requirements: 2.2, 2.4, 6.2_
 
-  - [ ] 6.6 Create `components/products/product-detail-sheet.tsx`
+  - [x] 6.6 Create `components/products/product-detail-sheet.tsx`
     - shadcn `Sheet` (slide-over) with `role="dialog"` and `aria-labelledby`; trap focus when open and restore focus on close
     - Sections: product details (name, type, selling price, description — all editable inline), `CostItemList` + `CostItemForm`, break-even analysis panel (Break_Even_Units with inline `'N/A'` or `'Cannot break even'` messages), contribution margin and CM ratio, `ViabilityBadge`
     - All derived metrics update within 1 second of any cost or price change without page reload
     - _Requirements: 2.3, 2.4, 3.3, 3.4, 4.2, 4.3, 4.4, 4.5, 6.2_
 
-  - [ ] 6.7 Create `components/products/add-product-dialog.tsx`
+  - [x] 6.7 Create `components/products/add-product-dialog.tsx`
     - shadcn `Dialog` with `role="dialog"` and `aria-labelledby`
     - Form fields: name (required, max 150 chars), product type selector (Physical Good / Service), description (optional), selling price (required, > 0)
     - Use `react-hook-form` with inline field-level validation errors using `validateProduct`; prevent submission when any required field is invalid
