@@ -104,7 +104,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - Verify `error` is set on network failure and `retryLoad` clears it and re-fetches
     - _Requirements: 1.7, 7.4, 7.5_
 
-- [-] 6. UI components — bottom-up
+- [ ] 6. UI components — bottom-up
   - [x] 6.1 Create `components/products/viability-badge.tsx`
     - Render a color-coded badge: green background for `'Profitable'`, yellow for `'Break-Even'`, red for `'Unprofitable'`
     - Include a visible text label alongside color — color must not be the sole indicator of status (WCAG 2.1 AA)
@@ -127,7 +127,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - On submit, call `addCostItem` or `updateCostItem` from `ProductProvider`
     - _Requirements: 2.1, 2.5_
 
-  - [-] 6.5 Create `components/products/cost-item-list.tsx`
+  - [x] 6.5 Create `components/products/cost-item-list.tsx`
     - Render cost items grouped by type (Variable / Fixed) with label, amount, edit button, and delete button per row
     - On delete, call `removeCostItem` from `ProductProvider`
     - Show computed totals: total variable costs, total fixed costs

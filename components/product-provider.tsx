@@ -21,8 +21,8 @@ interface ProductContextType {
     updateProduct: (id: string, data: Partial<{ name: string; productType: ProductType; description?: string; sellingPrice: number }>) => Promise<void>;
     deleteProduct: (id: string) => Promise<void>;
     addCostItem: (productId: string, data: { label: string; costType: 'Variable' | 'Fixed'; amount: number }) => Promise<void>;
-    updateCostItem: (itemId: string, data: Partial<{ label: string; costType: 'Variable' | 'Fixed'; amount: number }>) => Promise<void>;
-    removeCostItem: (itemId: string) => Promise<void>;
+    updateCostItem: (productId: string, itemId: string, data: Partial<{ label: string; costType: 'Variable' | 'Fixed'; amount: number }>) => Promise<void>;
+    removeCostItem: (productId: string, itemId: string) => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined)
@@ -157,10 +157,9 @@ export default function ProductProvider({ children }: { children: React.ReactNod
     }
   }, [loadProducts])
 
-  const updateCostItem = useCallback(async (itemId: string, data: Partial<{ label: string; costType: 'Variable' | 'Fixed'; amount: number }>) => {
+  const updateCostItem = useCallback(async (productId: string, itemId: string, data: Partial<{ label: string; costType: 'Variable' | 'Fixed'; amount: number }>) => {
     try {
-      const res = await fetch(`/api/products/${encodeURIComponent('')}/cost-items/${encodeURIComponent(itemId)}?id=${encodeURIComponent(itemId)}`, {
-        // server expects pathname parsing; use PATCH to the cost-item route
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/cost-items/${encodeURIComponent(itemId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -179,9 +178,9 @@ export default function ProductProvider({ children }: { children: React.ReactNod
     }
   }, [loadProducts])
 
-  const removeCostItem = useCallback(async (itemId: string) => {
+  const removeCostItem = useCallback(async (productId: string, itemId: string) => {
     try {
-      const res = await fetch(`/api/products/${encodeURIComponent('')}/cost-items/${encodeURIComponent(itemId)}?id=${encodeURIComponent(itemId)}`, {
+      const res = await fetch(`/api/products/${encodeURIComponent(productId)}/cost-items/${encodeURIComponent(itemId)}`, {
         method: 'DELETE',
       })
       const json = await res.json()

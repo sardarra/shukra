@@ -116,7 +116,7 @@ export function CostItemForm(props: CostItemFormProps) {
         amount: parsedAmount,
       })
     } else {
-      await updateCostItem(props.costItem.id, {
+      await updateCostItem(props.productId, props.costItem.id, {
         label: values.label.trim(),
         costType: values.costType,
         amount: parsedAmount,

@@ -169,7 +169,7 @@ export function CostItemList({ productId, costItems }: CostItemListProps) {
 
     setIsDeleting(itemId)
     try {
-      await removeCostItem(itemId)
+      await removeCostItem(productId, itemId)
     } finally {
       setIsDeleting(null)
     }
