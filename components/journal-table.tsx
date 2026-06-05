@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/accounting-store'
 import { Trash2 } from 'lucide-react'
-import { Empty } from '@/components/ui/empty'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 
 export function JournalTable() {
   const { journalEntries, deleteEntry } = useAccounting()
@@ -26,10 +26,14 @@ export function JournalTable() {
 
   if (journalEntries.length === 0) {
     return (
-      <Empty
-        title="No journal entries"
-        description="Record your first transaction from the Dashboard to see entries here."
-      />
+      <Empty className="border border-dashed">
+        <EmptyHeader>
+          <EmptyTitle>No journal entries</EmptyTitle>
+          <EmptyDescription>
+            Record your first transaction from the Dashboard to see entries here.
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     )
   }
 

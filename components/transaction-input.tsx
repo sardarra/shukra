@@ -67,6 +67,11 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
 
   const isFloating = variant === 'floating'
 
+  const needsClarification = !!clarificationQuestion
+  const confirmDisabled = needsClarification || isLoading
+  const isLowConfidence =
+    needsClarification || (pendingEntry != null && pendingEntry.parsed.confidence < 0.8)
+
   const submitInput = async () => {
     if (!input.trim() || isLoading || pendingEntry || isQuotaExhausted) return
     await parseTransaction(input.trim())
@@ -79,6 +84,10 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
   }
 
   const handleConfirm = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'post-fix',hypothesisId:'H1',location:'transaction-input.tsx:handleConfirm',message:'UI Confirm clicked',data:{needsClarification,isLoading,hasPending:!!pendingEntry,confirmDisabled},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+    if (confirmDisabled) return
     confirmEntry()
     setClarificationAnswer('')
   }
@@ -91,6 +100,9 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
   const handleClarification = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!clarificationAnswer.trim()) return
+    // #region agent log
+    fetch('http://127.0.0.1:7709/ingest/f40f776f-254e-49db-9528-88929ba71b5f',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d4d661'},body:JSON.stringify({sessionId:'d4d661',runId:'pre-fix',hypothesisId:'H3',location:'transaction-input.tsx:handleClarification',message:'UI Clarify submitted',data:{answerPreview:clarificationAnswer.trim().slice(0,80),needsClarification,isLoading},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     await answerClarification(clarificationAnswer.trim())
     setClarificationAnswer('')
   }
@@ -125,10 +137,6 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
     })
     setShowManualEntry(false)
   }
-
-  const needsClarification = !!clarificationQuestion
-  const isLowConfidence =
-    needsClarification || (pendingEntry != null && pendingEntry.parsed.confidence < 0.8)
 
   const hasOverlay = !!(pendingEntry || error || isQuotaExhausted || (showManualEntry && !pendingEntry))
 
@@ -392,7 +400,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
             )}
 
             <div className="flex items-center gap-2 pt-1">
-              <Button size="sm" onClick={handleConfirm} disabled={needsClarification}>
+              <Button size="sm" onClick={handleConfirm} disabled={confirmDisabled}>
                 <Check className="mr-1.5 h-4 w-4" />
                 Confirm
               </Button>

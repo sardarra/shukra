@@ -12,6 +12,8 @@ import {
   TrendingUp,
   PieChart,
   LogOut,
+  Wrench,
+  ShoppingBag,
 } from 'lucide-react'
 
 const navigation = [
@@ -21,6 +23,8 @@ const navigation = [
   { name: 'Trial Balance', href: '/trial-balance', icon: Scale },
   { name: 'Income Statement', href: '/income-statement', icon: TrendingUp },
   { name: 'Balance Sheet', href: '/balance-sheet', icon: PieChart },
+  { name: 'Equipment', href: '/equipment', icon: Wrench },
+  { name: 'Products', href: '/products', icon: ShoppingBag },
 ]
 
 export function AppSidebar() {
