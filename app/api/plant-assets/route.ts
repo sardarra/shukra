@@ -22,6 +22,7 @@ export async function DELETE(request: Request) {
   }
 
   const result = await deletePlantAssetForUser(user.id, id)
+  console.log('[plant-assets DELETE] deletePlantAssetForUser result:', result, { id, userId: user.id })
   if (!result.ok) {
     const status = result.error === 'Equipment not found' ? 404 : 500
     return Response.json(result, { status })

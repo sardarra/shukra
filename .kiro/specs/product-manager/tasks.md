@@ -166,8 +166,8 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
 - [ ] 7. Checkpoint — ensure all component unit tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Page assembly — wire everything together
-  - [ ] 8.1 Create `app/(app)/products/page.tsx`
+- [x] 8. Page assembly — wire everything together
+  - [x] 8.1 Create `app/(app)/products/page.tsx`
     - Wrap page content in `<ProductProvider>`
     - Render `ProductSummaryPanel`, `ProductList`, and a floating "Add Product" button that opens `AddProductDialog`
     - Render an alert banner when `ProductProvider.error` is non-null, with a "Retry" button that calls `retryLoad` (consistent with `AccountingProvider` pattern)
@@ -178,7 +178,7 @@ Implement the Product Manager as a self-contained feature within Shukra. The pla
     - **Property 10: Product Creation Round Trip** — for any valid `CreateProductPayload`, the product returned by `createProduct` contains all input fields with matching values
     - **Validates: Requirements 1.1, 1.2**
 
-  - [ ] 8.3 Add Products entry to `components/app-sidebar.tsx`
+  - [x] 8.3 Add Products entry to `components/app-sidebar.tsx`
     - Import a suitable icon (e.g., `ShoppingBag` from lucide-react)
     - Add `{ name: 'Products', href: '/products', icon: ShoppingBag }` to the `navigation` array
     - _Requirements: 6.1_

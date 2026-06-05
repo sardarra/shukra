@@ -208,15 +208,23 @@ export async function deletePlantAssetForUser(
 
   // Delete the plant asset row directly — don't rely on the journal entry
   // delete path to cascade this, since that path can fail silently.
-  const { error: deleteAssetError } = await supabase
+  const { error: deleteAssetError, count: deletedCount } = await supabase
     .from('plantAssets')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('id', plantAssetId)
     .eq('user_id', userId)
 
   if (deleteAssetError) {
     console.error('Failed deleting plantAsset:', deleteAssetError)
     return { ok: false, error: 'Failed to delete equipment' }
+  }
+
+  if (deletedCount === 0) {
+    console.error(
+      'deletePlantAssetForUser: delete matched 0 rows — possible RLS mismatch.',
+      { plantAssetId, userId }
+    )
+    return { ok: false, error: 'Equipment not found' }
   }
 
   // If there's a linked journal entry, delete it too.
