@@ -9,10 +9,10 @@ import {
   LayoutDashboard,
   BookOpen,
   FileText,
-  Scale,
-  TrendingUp,
-  PieChart,
+  FolderOpen,
   Menu,
+  Wrench,
+  ShoppingBag,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -20,9 +20,9 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Journal', href: '/journal', icon: BookOpen },
   { name: 'Ledger', href: '/ledger', icon: FileText },
-  { name: 'Trial Balance', href: '/trial-balance', icon: Scale },
-  { name: 'Income Statement', href: '/income-statement', icon: TrendingUp },
-  { name: 'Balance Sheet', href: '/balance-sheet', icon: PieChart },
+  { name: 'Financial Documents', href: '/financial-documents', icon: FolderOpen },
+  { name: 'Equipment', href: '/equipment', icon: Wrench },
+  { name: 'Products', href: '/products', icon: ShoppingBag },
 ]
 
 export function MobileNav() {
