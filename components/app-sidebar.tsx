@@ -14,6 +14,8 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 
+import "@/components/styles/app-sidebar.css"
+
 
 import logo from '@/components/images/color-icon-left-layout.png'
 
@@ -63,6 +65,7 @@ export function AppSidebar() {
                     ? 'bg-sidebar-accent text-sidebar-foreground'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                 )}
+                style={{ backgroundColor: isActive ? '#7C6103' : 'transparent', color: isActive ? 'white' : 'black' }}
               >
                 <item.icon className="h-4 w-4" />
                 {item.name}
