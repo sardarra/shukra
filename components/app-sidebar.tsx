@@ -14,6 +14,9 @@ import {
   ShoppingBag,
 } from 'lucide-react'
 
+
+import logo from '@/components/images/color-icon-left-layout.png'
+
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Journal', href: '/journal', icon: BookOpen },
@@ -36,7 +39,7 @@ export function AppSidebar() {
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r border-border bg-sidebar">
       <div className="flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between h-16 flex-shrink-0 px-6 border-b border-sidebar-border gap-3">
-          <h1 className="text-xl font-semibold text-sidebar-foreground tracking-tight">Shukra</h1>
+          <img src={logo.src} alt="Logo" className="h-6 w-auto" />
           <button
             type="button"
             onClick={() => void handleSignOut()}
