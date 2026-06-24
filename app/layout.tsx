@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import Script from 'next/script'
 import './globals.css'
 import { AuthProvider } from '@/components/auth-provider'
 
@@ -38,6 +39,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735230075764523"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <AuthProvider>{children}</AuthProvider>
         <Analytics />
       </body>
