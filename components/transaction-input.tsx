@@ -170,6 +170,7 @@ export function TransactionInput({ variant = 'inline' }: TransactionInputProps) 
           disabled={!input.trim() || isLoading || !!pendingEntry || isQuotaExhausted}
           className="absolute bottom-3 left-3 h-9 w-9 rounded-full shrink-0"
           aria-label={isLoading ? 'Parsing transaction' : 'Submit transaction'}
+          style={{ backgroundColor: isLoading ? '#e5e7eb' : '#7C6103', color: 'white' }}
         >
           {isLoading ? (
             <Spinner className="h-4 w-4" />
