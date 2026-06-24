@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/accounting-store'
 import { TrendingUp, TrendingDown, DollarSign, Scale, PieChart } from 'lucide-react'
 import { PieChartAssets } from './ui/piechart'
+import  Script  from 'next/script'
 
 export function DashboardStats() {
   const { incomeStatement, balanceSheet, journalEntries, trialBalance } = useAccounting()
@@ -82,6 +83,35 @@ export function DashboardStats() {
           <PieChartAssets />
         </CardContent>
       </Card>
+      <Card className="col-span-full md:col-span-2 lg:col-span-4">
+        {/** TODO: add an ad here */}
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-lg font-semibold text-foreground">
+            Advertisement
+          </CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden />
+        </CardHeader>
+
+        <Script 
+          async 
+          src={"https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6735230075764523"}
+          crossOrigin="anonymous">
+
+        </Script>
+
+        <ins className="adsbygoogle"
+          style={{ display: "block" }}
+          data-ad-client="ca-pub-6735230075764523"
+          data-ad-slot="8448194599"
+          data-ad-format="auto"
+          data-full-width-responsive="true">
+        </ins>
+        <Script>
+          (adsbygoogle = window.adsbygoogle || []).push({});
+        </Script>
+
+      </Card>
+      
     </div>
   )
 }
