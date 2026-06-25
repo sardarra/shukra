@@ -1,28 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useAccounting } from './accounting-provider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/accounting-store'
 import { TrendingUp, TrendingDown, DollarSign, Scale, PieChart } from 'lucide-react'
 import { PieChartAssets } from './ui/piechart'
-
-declare global {
-  interface Window {
-    adsbygoogle: unknown[]
-  }
-}
+import { AdUnit } from './ads/AdUnit'
 
 export function DashboardStats() {
   const { incomeStatement, balanceSheet, journalEntries, trialBalance } = useAccounting()
-
-  useEffect(() => {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({})
-    } catch {
-      // adsbygoogle not ready
-    }
-  }, [])
 
   const totalDebits = trialBalance.reduce((sum, row) => sum + row.debit, 0)
   const totalCredits = trialBalance.reduce((sum, row) => sum + row.credit, 0)
@@ -105,14 +91,7 @@ export function DashboardStats() {
           <DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden />
         </CardHeader>
         <CardContent className="pt-0">
-          <ins
-            className="adsbygoogle"
-            style={{ display: 'block' }}
-            data-ad-client="ca-pub-6735230075764523"
-            data-ad-slot="8448194599"
-            data-ad-format="auto"
-            data-full-width-responsive="true"
-          />
+          <AdUnit slot="8448194599" />
         </CardContent>
       </Card>
       
