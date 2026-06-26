@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      const product = await insertProduct(supabase, parsed.data)
+      const product = await insertProduct(supabase, user.id, parsed.data)
       return Response.json({ ok: true, error: null, product }, { status: 201 })
     } catch (err) {
       console.error('Failed inserting product:', err)
