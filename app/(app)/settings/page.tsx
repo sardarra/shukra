@@ -21,8 +21,10 @@ export default function SettingsPage() {
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>
             {/* TODO: fill in your about text */}
-            Shukra is a vibe accounting tool that lets you record transactions in plain English and
-            handles the bookkeeping for you.
+            Shukra is an AI-first accounting tool built for small businesses and freelancers who'd rather focus on their work than their books. <br />
+We built Shukra because accounting software has always felt more complicated than it needs to be — dense interfaces, confusing workflows, and features you'll never use. Shukra strips all that away. Just tell it what happened in plain English, and it handles the rest: logging transactions, organizing your finances, and generating the reports that matter.
+Under the hood, Shukra turns your natural language into a clean  ledger — so your books are always accurate, always up to date, and always ready when you need them.
+We care a lot about making financial clarity accessible to everyone — not just accountants.
           </p>
           <p>
             {/* TODO: version, release notes link, etc. */}
@@ -37,14 +39,15 @@ export default function SettingsPage() {
           <CardTitle className="text-base">Contact</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>Shukra is currently developed solely by Sardar Rahman</p>
           <p>
             {/* TODO: fill in contact details */}
             Have a question or feedback? Reach out at{' '}
             <a
-              href="mailto:hello@example.com"
+              href="mailto:srcodingprojects@gmail.com"
               className="text-foreground underline underline-offset-4 hover:no-underline"
             >
-              hello@example.com
+              srcodingprojects@gmail.com
             </a>
           </p>
           <p>
