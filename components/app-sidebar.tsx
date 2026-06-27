@@ -12,6 +12,7 @@ import {
   LogOut,
   Wrench,
   ShoppingBag,
+  Settings,
 } from 'lucide-react'
 
 import "@/components/styles/app-sidebar.css"
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Financial Documents', href: '/financial-documents', icon: FolderOpen },
   { name: 'Equipment', href: '/equipment', icon: Wrench },
   { name: 'Products', href: '/products', icon: ShoppingBag },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export function AppSidebar() {
