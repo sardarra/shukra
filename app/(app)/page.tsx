@@ -13,8 +13,7 @@ export default function DashboardPage() {
 
         <RecentEntries />
 
-        <AdUnit slot="8448194599" />
-        <p>This ad keeps Shukra free for everyone. Thank you for your support!</p>
+        
       </div>
 
       <TransactionInput variant="floating" />
