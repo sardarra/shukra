@@ -95,11 +95,13 @@ export async function fetchProductsWithCostItems(
  */
 export async function insertProduct(
   supabase: SupabaseClient,
+  userId: string,
   payload: CreateProductPayload
 ): Promise<Product> {
   const { data, error } = await supabase
     .from('products')
     .insert({
+      user_id: userId,
       name: payload.name,
       product_type: payload.productType,
       description: payload.description ?? null,
@@ -175,12 +177,14 @@ export async function deleteProduct(
  */
 export async function insertCostItem(
   supabase: SupabaseClient,
+  userId: string,
   productId: string,
   payload: CreateCostItemPayload
 ): Promise<CostItem> {
   const { data, error } = await supabase
     .from('product_cost_items')
     .insert({
+      user_id: userId,
       product_id: productId,
       label: payload.label,
       cost_type: payload.costType,
