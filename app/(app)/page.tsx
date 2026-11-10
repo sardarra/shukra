@@ -1,6 +1,7 @@
 import { TransactionInput } from '@/components/transaction-input'
 import { DashboardStats } from '@/components/dashboard-stats'
 import { RecentEntries } from '@/components/recent-entries'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 export default function DashboardPage() {
   return (
@@ -11,6 +12,8 @@ export default function DashboardPage() {
         <DashboardStats />
 
         <RecentEntries />
+
+        
       </div>
 
       <TransactionInput variant="floating" />

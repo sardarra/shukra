@@ -83,17 +83,7 @@ export function DashboardStats() {
           <PieChartAssets />
         </CardContent>
       </Card>
-      <Card className="col-span-full md:col-span-2 lg:col-span-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold text-foreground">
-            Advertisement
-          </CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" aria-hidden />
-        </CardHeader>
-        <CardContent className="pt-0">
-          <AdUnit slot="8448194599" />
-        </CardContent>
-      </Card>
+      
       
     </div>
   )
